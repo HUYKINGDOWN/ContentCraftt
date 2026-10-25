@@ -1,0 +1,66 @@
+### 1. Health check
+GET http://localhost:8000/api/health
+
+### 2. Brands
+GET http://localhost:8000/api/brands
+
+### 3. Create Brand
+POST http://localhost:8000/api/brands
+Content-Type: application/json
+
+{
+  "name": "Cà Phê Muối Sài Gòn",
+  "description": "Thương hiệu cà phê phong cách Sài Gòn mộc mạc",
+  "tone": "Thân thiện, trẻ trung"
+}
+
+### 4. Products
+GET http://localhost:8000/api/products
+
+### 5. Create Product
+POST http://localhost:8000/api/products
+Content-Type: application/json
+
+{
+  "name": "Cà Phê Muối Kem Béo Chai 250ml",
+  "description": "Đóng chai tiện lợi mang đi",
+  "brand_id": 1
+}
+
+### 6. Contents
+GET http://localhost:8000/api/contents
+
+### 7. Create Content
+POST http://localhost:8000/api/contents
+Content-Type: application/json
+
+{
+  "title": "Khai trương chi nhánh mới",
+  "body": "Ghé ngay để nhận ưu đãi mua 1 tặng 1 trong tuần lễ khai trương!",
+  "platform": "Facebook",
+  "status": "Draft",
+  "brand_id": 1
+}
+
+### 8. Audiences
+GET http://localhost:8000/api/audiences
+
+### 9. Content Rules
+GET http://localhost:8000/api/content-rules
+
+### 10. Assets
+GET http://localhost:8000/api/assets
+
+### 11. Analytics Summary
+GET http://localhost:8000/api/analytics/summary
+
+### 12. AI Text Demo
+POST http://localhost:8000/api/ai/text
+Content-Type: application/json
+
+{
+  "topic": "Ra mắt bộ sưu tập cà phê đóng chai",
+  "platform": "Facebook",
+  "tone": "thân thiện",
+  "audience": "dân văn phòng"
+}

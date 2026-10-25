@@ -1,0 +1,36 @@
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+    depends_on:
+      - db
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000/api
+      - VITE_API_BASE_URL=/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: contentcraft
+      POSTGRES_USER: contentcraft
+      POSTGRES_PASSWORD: contentcraft
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:

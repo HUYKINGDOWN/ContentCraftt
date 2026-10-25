@@ -1,0 +1,2 @@
+# Database design (demo)
+Each model currently has an integer primary key. Domain tables include users, brands, products, audiences, content_rules, assets, contents, content_versions, feedback, analytics_events, social_accounts and audit_logs. Foreign-key constraints and tenant ownership are intentionally minimal in this runnable scaffold and should be added before production use. Tables are created on startup for demo convenience; use Alembic migrations for controlled schema changes.

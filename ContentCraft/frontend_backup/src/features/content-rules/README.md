@@ -1,0 +1,1 @@
+# content-rules\nFeature module demo; UI shell is currently composed in `src/App.tsx`. Extract components here as the application grows.\n

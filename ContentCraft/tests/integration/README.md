@@ -1,0 +1,1 @@
+# Integration tests\nAdd DB-backed tests here; configure a dedicated test database before running.\n

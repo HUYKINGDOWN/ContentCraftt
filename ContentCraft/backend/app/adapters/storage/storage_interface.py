@@ -1,0 +1,3 @@
+from typing import Protocol
+class StorageInterface(Protocol):
+    def save(self, name: str, content: bytes) -> str: ...

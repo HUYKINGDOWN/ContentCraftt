@@ -1,0 +1,1 @@
+# Store\nDemo currently uses local React state. Add Zustand/Redux here if needed.\n

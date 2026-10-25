@@ -1,0 +1,3 @@
+ContentCraft generated demo scaffold
+Generated files: 160
+See README.md for run instructions.
