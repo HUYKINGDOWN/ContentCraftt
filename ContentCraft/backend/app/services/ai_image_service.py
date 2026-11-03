@@ -7,7 +7,7 @@ from typing import Optional
 
 
 class AIImageService:
-    """Dịch vụ sinh hình ảnh AI marketing chất lượng cao (hỗ trợ Flux.1, SDXL)."""
+    """Dịch vụ sinh hình ảnh AI marketing chất lượng cao (hỗ trợ Flux.1, SDXL, Reference Image Subject)."""
 
     DIMENSIONS = {
         "1:1": (1024, 1024),
@@ -25,13 +25,47 @@ class AIImageService:
         "Vintage 35mm": "1980s 35mm film photography, Kodak Portra 400 grain, warm cinematic vignette, retro aesthetic",
     }
 
+    VIETNAMESE_KEYWORD_MAP = {
+        "con vịt": "a charming duck",
+        "vịt": "a duck",
+        "vịt vàng": "a cute yellow duck",
+        "thiên nga": "an elegant swan",
+        "chó": "a cute dog",
+        "mèo": "a cute cat",
+        "cà phê": "specialty coffee cup",
+        "ly cà phê": "iced coffee glass",
+        "chai": "premium glass bottle",
+        "mỹ phẩm": "luxury cosmetics bottle",
+        "quần áo": "fashion apparel",
+        "giày": "stylish sneakers",
+    }
+
     def generate(
         self,
         prompt: str,
         style: Optional[str] = None,
         aspect_ratio: str = "1:1",
+        reference_subject: Optional[str] = None,
+        reference_name: Optional[str] = None,
     ):
         clean_prompt = prompt.strip() if prompt else "A premium marketing product display"
+
+        # Nếu có reference_subject (ví dụ người dùng tải ảnh con vịt), bổ sung vào prompt
+        subject_term = ""
+        if reference_subject and reference_subject.strip():
+            raw_sub = reference_subject.strip().lower()
+            translated = self.VIETNAMESE_KEYWORD_MAP.get(raw_sub, raw_sub)
+            subject_term = translated
+        elif reference_name:
+            lower_name = reference_name.lower()
+            if any(k in lower_name for k in ["vit", "duck"]):
+                subject_term = "a cute duck"
+            elif any(k in lower_name for k in ["thiennga", "swan"]):
+                subject_term = "an elegant swan"
+
+        # Tích hợp subject vào câu prompt
+        if subject_term and subject_term.lower() not in clean_prompt.lower():
+            clean_prompt = f"featuring {subject_term}, {clean_prompt}"
 
         # Tối ưu hóa prompt với từ khóa phong cách
         style_enrichment = self.STYLE_KEYWORDS.get(style or "", "")

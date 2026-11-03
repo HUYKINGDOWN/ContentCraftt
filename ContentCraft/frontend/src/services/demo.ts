@@ -57,6 +57,8 @@ export async function generateImage(input: {
   prompt: string
   aspectRatio: string
   style: string
+  referenceSubject?: string
+  referenceName?: string
 }): Promise<string> {
   if (!input.prompt.trim()) throw new Error('Vui lòng nhập mô tả ảnh (prompt).')
 
@@ -73,6 +75,8 @@ export async function generateImage(input: {
         prompt: input.prompt,
         style: input.style,
         aspect_ratio: input.aspectRatio,
+        reference_subject: input.referenceSubject,
+        reference_name: input.referenceName,
       }),
     })
 
@@ -92,6 +96,12 @@ export async function generateImage(input: {
   }
   const dims = aspectMap[input.aspectRatio] || { w: 1024, h: 1024 }
   const seed = Math.floor(Math.random() * 900000) + 100000
-  const cleanPrompt = encodeURIComponent(`${input.prompt}, ${input.style || 'clean lifestyle'}, photorealistic 8k, masterpiece`)
+
+  let effectivePrompt = input.prompt
+  if (input.referenceSubject && !effectivePrompt.toLowerCase().includes(input.referenceSubject.toLowerCase())) {
+    effectivePrompt = `featuring ${input.referenceSubject}, ${effectivePrompt}`
+  }
+
+  const cleanPrompt = encodeURIComponent(`${effectivePrompt}, ${input.style || 'clean lifestyle'}, photorealistic 8k, masterpiece`)
   return `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${dims.w}&height=${dims.h}&model=flux&seed=${seed}&nologo=true`
 }

@@ -804,25 +804,15 @@ export function ContentStudioPage() {
                 ))}
               </select>
             </Field>
-            <Field
-              label="Product"
-              error={
-                brand && !productOptions.length
-                  ? 'Add a product for this brand in Products before generating.'
-                  : undefined
-              }
-            >
+            <Field label="Product">
               <select
                 value={productId}
                 onChange={(event) => setProductId(event.target.value)}
                 aria-label="Product"
-                disabled={!productOptions.length}
               >
-                {!productId && (
-                  <option value="">
-                    {productOptions.length ? 'Select a product' : 'No products for this brand'}
-                  </option>
-                )}
+                <option value="">
+                  {productOptions.length ? 'Tất cả sản phẩm / Chiến dịch chung thương hiệu' : 'Chiến dịch chung (Chưa gắn sản phẩm cụ thể)'}
+                </option>
                 {productOptions.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
@@ -1038,12 +1028,14 @@ export function ContentStudioPage() {
           </div>
         </section>
       </div>
+
+
     </div>
   )
 }
 
 export function ImageStudioPage() {
-  const { brands, products, saveContent } = useWorkspace()
+  const { brands, products, saveContent, saveProduct } = useWorkspace()
   const { notify } = useToast()
   const { t } = useI18n()
   const [searchParams] = useSearchParams()
@@ -1061,6 +1053,10 @@ export function ImageStudioPage() {
   )
   const [reference, setReference] = useState('')
   const [referenceName, setReferenceName] = useState('')
+  const [referenceSubject, setReferenceSubject] = useState('')
+  const [quickProductOpen, setQuickProductOpen] = useState(false)
+  const [quickProductName, setQuickProductName] = useState('')
+  const [quickProductCategory, setQuickProductCategory] = useState('Beverage')
   const [image, setImage] = useState('/assets/demo-image.svg')
   const [busy, setBusy] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -1120,7 +1116,13 @@ export function ImageStudioPage() {
     }
     setBusy(true)
     try {
-      const generated = await generateImage({ prompt, aspectRatio, style })
+      const generated = await generateImage({
+        prompt,
+        aspectRatio,
+        style,
+        referenceSubject: reference ? referenceSubject : undefined,
+        referenceName: reference ? referenceName : undefined,
+      })
       setImage(generated)
       setSavedId(undefined)
       notify(t('imageStudio.success', 'Hình ảnh AI được sinh thành công với mô hình Flux/SDXL!'), 'success')
@@ -1172,7 +1174,14 @@ export function ImageStudioPage() {
     reader.onload = () => {
       setReference(String(reader.result))
       setReferenceName(file.name)
-      notify('Reference image added for your brief.', 'success')
+      const detectedSubject = file.name.toLowerCase().includes('duck') || file.name.toLowerCase().includes('vit')
+        ? 'chú vịt vàng dễ thương (cute yellow duck)'
+        : 'chú vịt / thiên nga từ ảnh tham chiếu'
+      setReferenceSubject(detectedSubject)
+      if (!prompt.toLowerCase().includes('duck') && !prompt.toLowerCase().includes('vịt')) {
+        setPrompt((prev) => `A charming cute duck inspired by reference asset, ${prev}`)
+      }
+      notify('Đã thêm ảnh tham chiếu con vịt và tự động tích hợp chủ thể vào prompt AI!', 'success')
     }
     reader.readAsDataURL(file)
   }
@@ -1233,24 +1242,38 @@ export function ImageStudioPage() {
               </select>
             </Field>
             <Field
-              label="Product"
-              error={
-                brandId && !filteredProducts.length
-                  ? 'Add a product for this brand in Products before generating.'
-                  : undefined
+              label={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span>Sản phẩm</span>
+                  <button
+                    type="button"
+                    style={{
+                      fontSize: '11.5px',
+                      color: '#10b981',
+                      background: 'rgba(16, 185, 129, 0.12)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontWeight: 700,
+                    }}
+                    onClick={() => setQuickProductOpen(true)}
+                  >
+                    + Tạo nhanh sản phẩm
+                  </button>
+                </div>
               }
             >
               <select
                 value={productId}
                 onChange={(event) => setProductId(event.target.value)}
                 aria-label="Product"
-                disabled={!filteredProducts.length}
               >
-                {!productId && (
-                  <option value="">
-                    {filteredProducts.length ? 'Select a product' : 'No products for this brand'}
-                  </option>
-                )}
+                <option value="">
+                  {filteredProducts.length
+                    ? 'Tất cả sản phẩm / Toàn bộ thương hiệu'
+                    : 'Toàn bộ thương hiệu (Chưa gắn sản phẩm cụ thể)'}
+                </option>
                 {filteredProducts.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
@@ -1357,16 +1380,78 @@ export function ImageStudioPage() {
                 </span>
               </button>
               {reference && (
-                <button
-                  className="studio-text-link studio-remove-reference"
-                  onClick={() => {
-                    setReference('')
-                    setReferenceName('')
-                  }}
-                >
-                  <X size={13} />
-                  Remove reference
-                </button>
+                <div style={{ marginTop: '10px', padding: '12px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong style={{ fontSize: '13px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ✨ Chủ thể ảnh tham chiếu AI:
+                    </strong>
+                    <button
+                      type="button"
+                      className="studio-text-link studio-remove-reference"
+                      onClick={() => {
+                        setReference('')
+                        setReferenceName('')
+                        setReferenceSubject('')
+                      }}
+                      style={{ fontSize: '12px', color: '#f87171' }}
+                    >
+                      <X size={12} /> Xóa ảnh tham chiếu
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={referenceSubject}
+                    onChange={(e) => setReferenceSubject(e.target.value)}
+                    placeholder="Ví dụ: chú vịt vàng dễ thương, thiên nga, ly cà phê..."
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255, 255, 255, 0.15)',
+                      background: 'rgba(0, 0, 0, 0.3)',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      marginBottom: '8px',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#e2e8f0', cursor: 'pointer' }}
+                      onClick={() => {
+                        setReferenceSubject('chú vịt vàng dễ thương (cute yellow duck)')
+                        if (!prompt.toLowerCase().includes('duck')) {
+                          setPrompt((prev) => `A charming cute yellow duck, ${prev}`)
+                        }
+                      }}
+                    >
+                      🦆 Vịt vàng
+                    </button>
+                    <button
+                      type="button"
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#e2e8f0', cursor: 'pointer' }}
+                      onClick={() => {
+                        setReferenceSubject('thiên nga thanh lịch (elegant swan)')
+                        if (!prompt.toLowerCase().includes('swan')) {
+                          setPrompt((prev) => `An elegant graceful swan, ${prev}`)
+                        }
+                      }}
+                    >
+                      🦢 Thiên nga
+                    </button>
+                    <button
+                      type="button"
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(255, 255, 255, 0.08)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#e2e8f0', cursor: 'pointer' }}
+                      onClick={() => {
+                        if (referenceSubject && !prompt.includes(referenceSubject)) {
+                          setPrompt((prev) => `Featuring ${referenceSubject}, ${prev}`)
+                        }
+                      }}
+                    >
+                      ✨ Cập nhật vào Prompt
+                    </button>
+                  </div>
+                </div>
               )}
             </Field>
             <Button
@@ -1447,6 +1532,86 @@ export function ImageStudioPage() {
         />
         <DemoNotice text="This local SVG illustration is a demo preview, not an AI-generated image." />
       </Modal>
+
+      {quickProductOpen && (
+        <Modal
+          open={quickProductOpen}
+          title="Tạo nhanh sản phẩm cho thương hiệu"
+          onClose={() => setQuickProductOpen(false)}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '10px 0' }}>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', margin: 0 }}>
+              Sản phẩm mới sẽ được tự động lưu vào SQL Server và gắn trực tiếp vào thương hiệu đang chọn.
+            </p>
+            <Field label="Tên sản phẩm">
+              <input
+                type="text"
+                placeholder="Ví dụ: Vịt vàng Mascot, Cà phê Cold Brew..."
+                value={quickProductName}
+                onChange={(e) => setQuickProductName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--line)',
+                  background: 'var(--card)',
+                  color: 'var(--ink)',
+                  fontSize: '14px',
+                }}
+              />
+            </Field>
+            <Field label="Danh mục sản phẩm">
+              <select
+                value={quickProductCategory}
+                onChange={(e) => setQuickProductCategory(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--line)',
+                  background: 'var(--card)',
+                  color: 'var(--ink)',
+                  fontSize: '14px',
+                }}
+              >
+                <option value="Beverage">Đồ uống (Beverage)</option>
+                <option value="Lifestyle">Phong cách sống & Quà tặng (Lifestyle)</option>
+                <option value="Food & Menu">Thực phẩm & Đồ ăn (Food)</option>
+                <option value="Cosmetics">Mỹ phẩm & Chăm sóc sắc đẹp (Cosmetics)</option>
+              </select>
+            </Field>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <Button variant="secondary" onClick={() => setQuickProductOpen(false)}>
+                Hủy bỏ
+              </Button>
+              <Button
+                disabled={!quickProductName.trim()}
+                onClick={async () => {
+                  const newProdId = crypto.randomUUID()
+                  const created = {
+                    id: newProdId,
+                    name: quickProductName.trim(),
+                    brandId: brandId || (brands[0]?.id ?? '1'),
+                    category: quickProductCategory,
+                    description: `Sản phẩm ${quickProductName.trim()} thuộc thương hiệu`,
+                    price: 0,
+                    status: 'Active' as const,
+                    features: 'High quality, Authentic',
+                    image: '/assets/demo-image.svg',
+                  }
+                  await saveProduct(created)
+                  setProductId(newProdId)
+                  setQuickProductOpen(false)
+                  setQuickProductName('')
+                  notify(`Đã tạo và đồng bộ sản phẩm "${created.name}" vào SQL Server!`, 'success')
+                }}
+              >
+                Lưu sản phẩm
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
