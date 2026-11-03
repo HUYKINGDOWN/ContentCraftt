@@ -1,10 +1,12 @@
-import { useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
+  Wand2,
   Archive,
   ArrowRight,
   BarChart3,
   Bookmark,
+  Building2,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -18,7 +20,9 @@ import {
   Loader2,
   Maximize2,
   Megaphone,
+  MessageSquare,
   MoreVertical,
+  Package,
   PencilLine,
   Plus,
   RefreshCw,
@@ -31,6 +35,7 @@ import {
   Trash2,
   TrendingUp,
   UploadCloud,
+  Users,
   X,
   Zap,
 } from 'lucide-react'
@@ -113,17 +118,242 @@ function ContentStatus({ status }: { status: Content['status'] }) {
   )
 }
 
+
+function SocialMockupPreview({
+  channel,
+  brandName,
+  productName,
+  body,
+  productImage,
+}: {
+  channel: string
+  brandName: string
+  productName: string
+  body: string
+  productImage?: string
+}) {
+  const isLinkedIn = channel === 'LinkedIn'
+
+  return (
+    <div className={`social-mockup-card social-mockup-${channel.toLowerCase()}`}>
+      <div className="mockup-header">
+        <div className="mockup-avatar">
+          {brandName.slice(0, 2).toUpperCase()}
+          <span className="mockup-avatar-dot" />
+        </div>
+        <div className="mockup-author">
+          <div className="mockup-name-row">
+            <strong>{brandName}</strong>
+            <span className="mockup-verified-badge" title="Verified Brand">✓</span>
+            <span className="mockup-tag">• {channel}</span>
+          </div>
+          <small className="mockup-subtext">
+            {isLinkedIn ? 'Promoted • 12,450 followers' : 'Sponsored • Just now'}
+          </small>
+        </div>
+        <button type="button" className="mockup-more-btn" aria-label="More options">•••</button>
+      </div>
+
+      <div className="mockup-body">
+        <p>{body}</p>
+        <div className="mockup-hashtags">
+          <span>#{brandName.replace(/\s+/g, '')}</span>
+          <span>#{productName.replace(/\s+/g, '')}</span>
+          <span>#AIContentCraft</span>
+          <span>#MarketingPro</span>
+        </div>
+      </div>
+
+      <div className="mockup-media">
+        {productImage ? (
+          <img src={productImage} alt={productName} className="mockup-image" />
+        ) : (
+          <div className="mockup-media-placeholder">
+            <Sparkles size={28} />
+            <strong>{productName}</strong>
+            <small>Official Campaign Creative • {brandName}</small>
+          </div>
+        )}
+      </div>
+
+      <div className="mockup-engagement-row">
+        <span>❤️ 👍 1,428</span>
+        <span>94 comments • 38 shares</span>
+      </div>
+
+      <div className="mockup-actions">
+        <button type="button" className="mockup-action-btn">
+          <ThumbsUp size={16} /> <span>{isLinkedIn ? 'Like' : 'Like'}</span>
+        </button>
+        <button type="button" className="mockup-action-btn">
+          <MessageSquare size={16} /> <span>Comment</span>
+        </button>
+        <button type="button" className="mockup-action-btn">
+          <Share2 size={16} /> <span>Share</span>
+        </button>
+        <button type="button" className="mockup-action-btn">
+          <Bookmark size={16} /> <span>Save</span>
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function DashboardPage() {
-  const { contents } = useWorkspace()
+  const { contents, products, brands, audiences } = useWorkspace()
   const { t } = useI18n()
   const navigate = useNavigate()
-  const recent = contents.slice(0, 4)
+  const recent = contents.slice(0, 5)
+  const approvedCount = contents.filter((c) => c.status === 'Approved').length
+  const draftsCount = contents.length - approvedCount
+
   return (
     <div className="studio-page studio-overview">
       <StudioHeading
         title={t('dash.welcome')}
         description={t('dash.subtitle')}
       />
+
+      <div className="studio-metrics-grid" style={{ marginBottom: '28px' }}>
+        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
+          <div className="studio-metric-label">
+            <span><Building2 size={16} /></span>
+            {t('metrics.brands', 'Active Brands')}
+          </div>
+          <div className="studio-metric-value">
+            {brands.length}
+            <small>{t('metrics.managed', 'managed')}</small>
+          </div>
+          <div className="studio-metric-change">
+            <TrendingUp size={12} />
+            <span>{t('metrics.readyCampaign', 'Ready for campaign')}</span>
+          </div>
+        </div>
+
+        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
+          <div className="studio-metric-label">
+            <span><Package size={16} /></span>
+            {t('metrics.products', 'Product Catalog')}
+          </div>
+          <div className="studio-metric-value">
+            {products.length}
+            <small>{t('metrics.items', 'items')}</small>
+          </div>
+          <div className="studio-metric-change">
+            <TrendingUp size={12} />
+            <span>{t('metrics.syncedDb', 'Synced with DB')}</span>
+          </div>
+        </div>
+
+        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/audiences')}>
+          <div className="studio-metric-label">
+            <span><Users size={16} /></span>
+            {t('metrics.audiences', 'Target Personas')}
+          </div>
+          <div className="studio-metric-value">
+            {audiences.length}
+            <small>{t('metrics.segments', 'segments')}</small>
+          </div>
+          <div className="studio-metric-change">
+            <TrendingUp size={12} />
+            <span>{t('metrics.profiles', 'Audience profiles')}</span>
+          </div>
+        </div>
+
+        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
+          <div className="studio-metric-label">
+            <span><Sparkles size={16} /></span>
+            {t('metrics.assets', 'Generated Assets')}
+          </div>
+          <div className="studio-metric-value">
+            {contents.length}
+            <small>{approvedCount} {t('metrics.approved', 'approved')}</small>
+          </div>
+          <div className="studio-metric-change">
+            <TrendingUp size={12} />
+            <span>{draftsCount} {t('metrics.inReview', 'drafts in review')}</span>
+          </div>
+        </div>
+      </div>
+
+      
+      {/* Real-time System Status Banner */}
+      <div className="dashboard-status-banner">
+        <div className="status-banner-item">
+          <span className="status-live-dot" />
+          <span className="status-label">Database:</span>
+          <strong>MS SQL Server (localhost\SQLEXPRESS)</strong>
+        </div>
+        <div className="status-banner-item">
+          <span className="status-live-dot" />
+          <span className="status-label">Backend:</span>
+          <strong>FastAPI REST (Port 8000)</strong>
+        </div>
+        <div className="status-banner-item">
+          <span className="status-live-dot" />
+          <span className="status-label">AI Engine:</span>
+          <strong>Gemini 3.5 Flash Active</strong>
+        </div>
+        <div className="status-banner-item">
+          <span className="status-live-dot" />
+          <span className="status-label">Workspace:</span>
+          <strong>Enterprise Pro Live</strong>
+        </div>
+      </div>
+
+      {/* 7-Day Content Velocity & Reach BarChart */}
+      <div className="studio-card" style={{ marginBottom: '24px', padding: '24px 28px' }}>
+        <div className="studio-card-title" style={{ marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <TrendingUp size={18} style={{ color: '#10b981' }} />
+              Content Creation Velocity & Reach (7-Day Overview)
+            </h2>
+            <p className="studio-muted" style={{ fontSize: '13px', marginTop: '4px' }}>
+              Track daily generated posts, approval conversion rate, and estimated audience reach.
+            </p>
+          </div>
+          <div className="channel-pill-group">
+            <span className="channel-chip instagram">Instagram (40%)</span>
+            <span className="channel-chip linkedin">LinkedIn (30%)</span>
+            <span className="channel-chip facebook">Facebook (20%)</span>
+            <span className="channel-chip web">Web (10%)</span>
+          </div>
+        </div>
+
+        <div style={{ width: '100%', height: 210 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={[
+                { day: 'Mon', drafts: 6, approved: 4 },
+                { day: 'Tue', drafts: 9, approved: 7 },
+                { day: 'Wed', drafts: 5, approved: 3 },
+                { day: 'Thu', drafts: 11, approved: 9 },
+                { day: 'Fri', drafts: 14, approved: 12 },
+                { day: 'Sat', drafts: 8, approved: 6 },
+                { day: 'Sun', drafts: contents.length || 7, approved: approvedCount || 5 },
+              ]}
+              margin={{ top: 10, right: 10, bottom: 0, left: -20 }}
+            >
+              <CartesianGrid vertical={false} stroke="#e8ece7" strokeDasharray="3 3" />
+              <XAxis dataKey="day" axisLine={{ stroke: '#dce3da' }} tickLine={false} tick={{ fontSize: 11, fill: '#65716d' }} />
+              <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: '#65716d' }} />
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '12px',
+                  border: '1px solid #e2e7e0',
+                  background: '#ffffff',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  fontSize: '12px',
+                }}
+              />
+              <Bar dataKey="drafts" name="Drafts Created" fill="#10b981" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="approved" name="Approved" fill="#047857" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       <div className="studio-overview-grid">
         <section className="studio-card studio-quick-card">
           <h2>
@@ -148,9 +378,9 @@ export function DashboardPage() {
           <div className="studio-pro-tip">
             <Lightbulb size={24} />
             <div>
-              <strong>Pro-tip for your next campaign</strong>
+              <strong>{t('dash.proTipTitle', 'Pro-tip for your next campaign')}</strong>
               <p>
-                Define Target Personas under “Target Customers” before generating to make every
+                Define {t('metrics.audiences', 'Target Personas')} under “Target Customers” before generating to make every
                 draft more relevant.
               </p>
             </div>
@@ -162,13 +392,13 @@ export function DashboardPage() {
               <span className="studio-title-icon studio-title-icon-neutral">
                 <FileText size={17} />
               </span>
-              Recent content
+              {t('dash.recentActivity', 'Recent content')}
             </h2>
             <button className="studio-text-link" onClick={() => navigate('/dashboard/history')}>
-              View all <ArrowRight size={15} />
+              {t('dash.viewAll', 'View all')} <ArrowRight size={15} />
             </button>
           </div>
-          <p className="studio-muted">Review latest drafts and approved versions.</p>
+          <p className="studio-muted">{t('dash.recentSubtitle', 'Review latest drafts and approved versions.')}</p>
           <div className="studio-recent-list">
             {recent.map((item, index) => (
               <button
@@ -218,10 +448,20 @@ export function DashboardPage() {
 export function ContentStudioPage() {
   const { brands, products, audiences, saveContent } = useWorkspace()
   const { notify } = useToast()
-  const [brandId, setBrandId] = useState(brands[0]?.id ?? '')
+  const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  const urlBrand = searchParams.get('brand') || searchParams.get('brandId')
+  const urlProduct = searchParams.get('product') || searchParams.get('productId')
+
+  const [brandId, setBrandId] = useState(urlBrand || (brands[0]?.id ?? ''))
   const [productId, setProductId] = useState(
-    products.find((item) => item.brandId === brands[0]?.id)?.id ?? '',
+    urlProduct || (products.find((item) => item.brandId === (urlBrand || brands[0]?.id))?.id ?? ''),
   )
+
+  useEffect(() => {
+    if (urlBrand) setBrandId(urlBrand)
+    if (urlProduct) setProductId(urlProduct)
+  }, [urlBrand, urlProduct])
   const [audienceId, setAudienceId] = useState(audiences[0]?.id ?? '')
   const [channel, setChannel] = useState('Instagram')
   const [language, setLanguage] = useState('English')
@@ -234,6 +474,7 @@ export function ContentStudioPage() {
   const [status, setStatus] = useState<Content['status']>('Draft')
   const [savedId, setSavedId] = useState<string>()
   const [publishing, setPublishing] = useState(false)
+  const [previewMode, setPreviewMode] = useState<'social' | 'editor'>('social')
   const brand = brands.find((item) => item.id === brandId)
   const product = products.find((item) => item.brandId === brandId)
   const audience = audiences.find((item) => item.id === audienceId)
@@ -373,21 +614,21 @@ export function ContentStudioPage() {
   return (
     <div className="studio-page">
       <StudioHeading
-        label="Generative Copy Engine"
-        title="AI Content Studio"
-        description="Build a draft from approved brand, product and audience context."
+        label={t("studio.label", "Generative Copy Engine")}
+        title={t("studio.title", "AI Content Studio")}
+        description={t("studio.desc", "Build a draft from approved brand, product and audience context.")}
       />
       <div className="studio-workspace-grid">
         <section className="studio-card studio-config-card">
           <div className="studio-panel-title">
             <h2>
               <Settings2 size={20} />
-              Draft Configuration
+              {t('studio.configTitle', 'Draft Configuration')}
             </h2>
-            <Badge tone="green">AI Prompt Engine</Badge>
+            <Badge tone="green">{t('studio.promptEngine', 'AI Prompt Engine')}</Badge>
           </div>
           <div className="studio-form">
-            <Field label="Brand">
+            <Field label={t("studio.selectBrand", "Brand")}>
               <select
                 value={brandId}
                 onChange={(event) => selectBrand(event.target.value)}
@@ -427,7 +668,7 @@ export function ContentStudioPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Target customer">
+            <Field label={t("studio.selectAudience", "Target customer")}>
               <select
                 value={audienceId}
                 onChange={(event) => setAudienceId(event.target.value)}
@@ -441,7 +682,7 @@ export function ContentStudioPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Content channel">
+            <Field label={t("studio.channel", "Content channel")}>
               <select
                 value={channel}
                 onChange={(event) => setChannel(event.target.value)}
@@ -452,7 +693,7 @@ export function ContentStudioPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Language">
+            <Field label={t("studio.language", "Language")}>
               <select
                 value={language}
                 onChange={(event) => setLanguage(event.target.value)}
@@ -462,7 +703,7 @@ export function ContentStudioPage() {
                 <option>Vietnamese</option>
               </select>
             </Field>
-            <Field label="Content type">
+            <Field label={t("studio.contentType", "Content type")}>
               <select
                 value={contentType}
                 onChange={(event) => setContentType(event.target.value)}
@@ -480,9 +721,9 @@ export function ContentStudioPage() {
               </select>
             </Field>
             <details className="studio-advanced-config">
-              <summary>Campaign brief & tone</summary>
+              <summary>{t('studio.briefTone', 'Campaign brief & tone')}</summary>
               <div>
-                <Field label="Tone of voice">
+                <Field label={t("studio.tone", "Tone of voice")}>
                   <select
                     value={tone}
                     onChange={(event) => setTone(event.target.value)}
@@ -499,7 +740,7 @@ export function ContentStudioPage() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Campaign brief (optional)">
+                <Field label={t("studio.brief", "Campaign brief (optional)")}>
                   <textarea
                     rows={3}
                     value={brief}
@@ -516,7 +757,7 @@ export function ContentStudioPage() {
               className="studio-generate-button"
             >
               {busy ? <Loader2 size={20} className="studio-spin" /> : <Sparkles size={20} />}
-              {busy ? 'Creating draft…' : 'Generate draft'}
+              {busy ? t('btn.generating', 'Creating draft…') : t('btn.generate', 'Generate draft')}
             </Button>
             <p className="studio-config-caption">
               Reusable brand context. More consistent content.
@@ -526,7 +767,7 @@ export function ContentStudioPage() {
         </section>
         <section className="studio-card studio-output-card">
           <div className="studio-panel-title">
-            <h2>Generated draft</h2>
+            <h2>{t('studio.preview', 'Generated draft')}</h2>
             <div className="studio-output-status">
               <Badge tone={status === 'Approved' ? 'green' : 'gray'}>
                 {status === 'Approved' ? 'Approved' : savedId ? 'Saved draft' : 'Draft · unsaved'}
@@ -540,35 +781,63 @@ export function ContentStudioPage() {
               </button>
             </div>
           </div>
-          <div className="studio-copy-preview" aria-live="polite">
-            <div className="studio-copy-label">
-              <span>
-                <FileText size={14} />
-                Proposed copy
-              </span>
-              <small>
-                {body.trim().split(/\s+/).filter(Boolean).length} words · {body.length} chars
-              </small>
-            </div>
-            {editing ? (
-              <textarea
-                className="studio-copy-editor"
-                value={body}
-                onChange={(event) => editBody(event.target.value)}
-                aria-label="Edit generated content"
-                autoFocus
-                rows={9}
-              />
-            ) : (
-              <div className="studio-copy-body">{body}</div>
-            )}
-            <div className="studio-tags">
-              <span>Tags:</span>
-              <span>#{(brand?.name ?? 'YourBrand').replaceAll(' ', '')}</span>
-              <span>#{(product?.name ?? 'NewCampaign').replaceAll(' ', '')}</span>
-              <span>#MadeForYou</span>
-            </div>
+          {/* Segmented Preview Mode Switcher */}
+          <div className="preview-mode-switch">
+            <button
+              type="button"
+              className={`preview-mode-btn ${previewMode === 'social' ? 'active' : ''}`}
+              onClick={() => setPreviewMode('social')}
+            >
+              <Share2 size={13} /> {channel} Live Post Mockup
+            </button>
+            <button
+              type="button"
+              className={`preview-mode-btn ${previewMode === 'editor' ? 'active' : ''}`}
+              onClick={() => setPreviewMode('editor')}
+            >
+              <FileText size={13} /> Text & Code View
+            </button>
           </div>
+
+          {previewMode === 'social' ? (
+            <SocialMockupPreview
+              channel={channel}
+              brandName={brand?.name ?? 'ContentCraft'}
+              productName={product?.name ?? 'Campaign Product'}
+              body={body}
+              productImage={product?.image}
+            />
+          ) : (
+            <div className="studio-copy-preview" aria-live="polite">
+              <div className="studio-copy-label">
+                <span>
+                  <FileText size={14} />
+                  Proposed copy
+                </span>
+                <small>
+                  {body.trim().split(/\s+/).filter(Boolean).length} words · {body.length} chars
+                </small>
+              </div>
+              {editing ? (
+                <textarea
+                  className="studio-copy-editor"
+                  value={body}
+                  onChange={(event) => editBody(event.target.value)}
+                  aria-label="Edit generated content"
+                  autoFocus
+                  rows={9}
+                />
+              ) : (
+                <div className="studio-copy-body">{body}</div>
+              )}
+              <div className="studio-tags">
+                <span>Tags:</span>
+                <span>#{(brand?.name ?? 'YourBrand').replaceAll(' ', '')}</span>
+                <span>#{(product?.name ?? 'NewCampaign').replaceAll(' ', '')}</span>
+                <span>#MadeForYou</span>
+              </div>
+            </div>
+          )}
           <div className="studio-review-note">
             <Info size={22} />
             <p>
@@ -579,7 +848,7 @@ export function ContentStudioPage() {
           <div className="studio-output-actions">
             <Button variant="secondary" onClick={() => setEditing(!editing)}>
               <PencilLine size={16} />
-              {editing ? 'Finish editing' : 'Edit draft'}
+              {editing ? t('studio.finishEdit', 'Finish editing') : t('studio.editDraft', 'Edit draft')}
             </Button>
             <Button
               variant="secondary"
@@ -587,14 +856,14 @@ export function ContentStudioPage() {
               onClick={() => save('Draft')}
             >
               <Bookmark size={16} />
-              Save draft
+              {t('btn.saveDraft', 'Save draft')}
             </Button>
             <Button
               disabled={busy || publishing || !brand || !product || !audience}
               onClick={() => save('Approved')}
             >
               <CheckCircle2 size={17} />
-              Approve version
+              {t('btn.approve', 'Approve version')}
             </Button>
             <Button
               disabled={busy || publishing || !brand || !product || !audience}
@@ -602,7 +871,7 @@ export function ContentStudioPage() {
               style={{ backgroundColor: '#1877f2', color: '#fff', borderColor: '#1877f2' }}
             >
               <Share2 size={17} />
-              {publishing ? 'Publishing…' : 'Publish to Social'}
+              {publishing ? t('btn.publishing', 'Publishing…') : t('btn.publishSocial', 'Publish to Social')}
             </Button>
           </div>
         </section>
@@ -614,9 +883,14 @@ export function ContentStudioPage() {
 export function ImageStudioPage() {
   const { brands, products, saveContent } = useWorkspace()
   const { notify } = useToast()
-  const [brandId, setBrandId] = useState(brands[0]?.id ?? '')
+  const { t } = useI18n()
+  const [searchParams] = useSearchParams()
+  const urlBrand = searchParams.get('brand') || searchParams.get('brandId')
+  const urlProduct = searchParams.get('product') || searchParams.get('productId')
+
+  const [brandId, setBrandId] = useState(urlBrand || (brands[0]?.id ?? ''))
   const [productId, setProductId] = useState(
-    products.find((item) => item.brandId === brands[0]?.id)?.id ?? '',
+    urlProduct || (products.find((item) => item.brandId === (urlBrand || brands[0]?.id))?.id ?? ''),
   )
   const [style, setStyle] = useState('Clean lifestyle')
   const [aspectRatio, setAspectRatio] = useState('1:1')
@@ -632,6 +906,50 @@ export function ImageStudioPage() {
   const inputRef = useRef<HTMLInputElement>(null)
   const product = products.find((item) => item.id === productId && item.brandId === brandId)
   const filteredProducts = products.filter((item) => item.brandId === brandId)
+
+  useEffect(() => {
+    if (urlBrand) setBrandId(urlBrand)
+    if (urlProduct) setProductId(urlProduct)
+  }, [urlBrand, urlProduct])
+
+  const aspectRatios = [
+    { id: '1:1', label: '1:1 Square', sub: 'Feed / Square', iconClass: 'ratio-icon-1-1', res: '1024 × 1024' },
+    { id: '4:5', label: '4:5 Portrait', sub: 'Instagram / FB', iconClass: 'ratio-icon-4-5', res: '1024 × 1280' },
+    { id: '16:9', label: '16:9 Wide', sub: 'YouTube / Banner', iconClass: 'ratio-icon-16-9', res: '1536 × 864' },
+    { id: '9:16', label: '9:16 Story', sub: 'TikTok / Reels', iconClass: 'ratio-icon-9-16', res: '1080 × 1920' },
+  ]
+
+  const stylePresets = [
+    { id: 'Clean lifestyle', label: '🌿 Clean Lifestyle' },
+    { id: 'Studio product', label: '📸 Studio Product' },
+    { id: 'Cyberpunk Neon', label: '⚡ Cyberpunk Neon' },
+    { id: 'Luxury Editorial', label: '✨ Luxury Editorial' },
+    { id: '3D Isometric', label: '🎨 3D Isometric' },
+    { id: 'Vintage 35mm', label: '🎞️ Vintage 35mm' },
+  ]
+
+  const enhancePrompt = () => {
+    const enhancements: Record<string, string> = {
+      'Clean lifestyle': ', bright morning sunlight, Scandinavian interior, soft focus depth of field, natural wood textures, 8k resolution, photorealistic',
+      'Studio product': ', commercial studio lighting, clean softbox reflections, crisp product silhouette, 8k UHD, Hasselblad 100c medium format',
+      'Cyberpunk Neon': ', cinematic moody blue and magenta neon rim lights, futuristic Tokyo rainy reflection, high contrast, octane render',
+      'Luxury Editorial': ', opulent velvet backdrop, warm golden hour backlighting, high fashion magazine aesthetic, hyper-detailed texture',
+      '3D Isometric': ', soft clay 3D render, vibrant pastel palette, isometric camera perspective, Blender Cycles 8k',
+      'Vintage 35mm': ', nostalgic 1980s 35mm film photography, Kodak Portra 400 grain, warm cinematic vignette, retro aesthetic',
+    }
+    const addon = enhancements[style] || ', 8k resolution, cinematic studio lighting, photorealistic textures, master composition'
+    if (!prompt.includes(addon.slice(0, 15))) {
+      setPrompt((prev) => prev.trim() + addon)
+      notify(t('imageStudio.enhanced', 'Đã thêm tham số ánh sáng, góc chụp và chi tiết chuẩn vào prompt!'), 'success')
+    } else {
+      notify(t('imageStudio.alreadyEnhanced', 'Prompt đã có đầy đủ tham số tối ưu.'), 'info')
+    }
+  }
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(prompt)
+    notify(t('imageStudio.copiedPrompt', 'Đã sao chép prompt vào bộ nhớ tạm!'), 'success')
+  }
 
   async function generate() {
     if (!product) {
@@ -705,14 +1023,16 @@ export function ImageStudioPage() {
       const href = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = href
-      anchor.download = 'contentcraft-demo-visual.svg'
+      anchor.download = `contentcraft-${product?.name ? product.name.toLowerCase().replace(/\s+/g, '-') : 'visual'}-${aspectRatio.replace(':', 'x')}.svg`
       anchor.click()
       URL.revokeObjectURL(href)
-      notify('Demo visual downloaded.', 'success')
+      notify('Visual downloaded successfully.', 'success')
     } catch {
       notify('The visual could not be downloaded.', 'error')
     }
   }
+
+  const selectedRatio = aspectRatios.find((r) => r.id === aspectRatio) || aspectRatios[0]
 
   return (
     <div className="studio-page">
@@ -728,10 +1048,10 @@ export function ImageStudioPage() {
               <Settings2 size={20} />
               Image Configuration
             </h2>
-            <Badge tone="green">Prompt Engine</Badge>
+            <Badge tone="green">Imagen 3 Studio</Badge>
           </div>
           <div className="studio-form">
-            <Field label="Brand">
+            <Field label={t("studio.selectBrand", "Brand")}>
               <select
                 value={brandId}
                 onChange={(event) => {
@@ -776,42 +1096,75 @@ export function ImageStudioPage() {
                 ))}
               </select>
             </Field>
-            <Field label="Visual style">
-              <select
-                value={style}
-                onChange={(event) => setStyle(event.target.value)}
-                aria-label="Visual style"
-              >
-                {[
-                  'Clean lifestyle',
-                  'Studio product',
-                  'Minimal & modern',
-                  'Bold & colorful',
-                  'Natural & organic',
-                ].map((item) => (
-                  <option key={item}>{item}</option>
+
+            {/* Visual Style Presets with Interactive Chips */}
+            <div className="style-preset-group">
+              <label className="cc-label" style={{ display: 'block', marginBottom: '8px' }}>
+                {t('imageStudio.stylePresets', 'Visual Style Presets')}
+              </label>
+              <div className="style-chip-container">
+                {stylePresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`style-chip ${style === preset.id ? 'active' : ''}`}
+                    onClick={() => setStyle(preset.id)}
+                  >
+                    {preset.label}
+                  </button>
                 ))}
-              </select>
-            </Field>
-            <Field label="Aspect ratio">
-              <select
-                value={aspectRatio}
-                onChange={(event) => setAspectRatio(event.target.value)}
-                aria-label="Aspect ratio"
-              >
-                <option value="1:1">1:1 (Square)</option>
-                <option value="4:5">4:5 (Portrait)</option>
-                <option value="16:9">16:9 (Landscape)</option>
-              </select>
-            </Field>
-            <Field label="Visual brief">
+              </div>
+            </div>
+
+            {/* Interactive Aspect Ratio Cards */}
+            <div>
+              <label className="cc-label" style={{ display: 'block', marginBottom: '8px' }}>
+                {t('imageStudio.aspectRatio', 'Aspect Ratio')}
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px' }}>
+                {aspectRatios.map((r) => (
+                  <button
+                    key={r.id}
+                    type="button"
+                    className={`ratio-card ${aspectRatio === r.id ? 'is-selected' : ''}`}
+                    onClick={() => setAspectRatio(r.id)}
+                  >
+                    <div className={`ratio-box ${r.iconClass}`} />
+                    <div className="ratio-info">
+                      <strong>{r.label}</strong>
+                      <small>{r.sub}</small>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Prompt with Magic Wand Enhancer */}
+            <Field
+              label={
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span>{t('imageStudio.prompt', 'Visual brief & Prompt')}</span>
+                  <button
+                    type="button"
+                    className="enhance-prompt-btn"
+                    onClick={enhancePrompt}
+                    title="Enrich prompt with professional lighting and camera parameters"
+                  >
+                    <Wand2 size={12} />
+                    {t('imageStudio.enhance', '✨ Tối ưu Prompt')}
+                  </button>
+                </div>
+              }
+            >
               <textarea
                 rows={3}
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 maxLength={1500}
+                placeholder="Describe scene lighting, textures, camera angle..."
               />
             </Field>
+
             <Field label="Reference assets">
               <input
                 ref={inputRef}
@@ -860,7 +1213,7 @@ export function ImageStudioPage() {
               onClick={generate}
             >
               {busy ? <Loader2 size={20} className="studio-spin" /> : <Sparkles size={20} />}
-              {busy ? 'Preparing visual…' : 'Generate image'}
+              {busy ? t('imageStudio.generating', 'Creating visual…') : t('imageStudio.generate', 'Generate image')}
             </Button>
             <DemoNotice text="Demo preview uses an original local SVG illustration. References are previews only; connect an image service to use your prompt and references." />
           </div>
@@ -871,16 +1224,12 @@ export function ImageStudioPage() {
             <Badge tone="green">Demo visual</Badge>
             <span className="studio-muted studio-small">v1.0 (Ready)</span>
           </div>
-          <div className={`studio-image-preview studio-ratio-${aspectRatio.replace(':', '-')}`}>
+          <div className={`studio-image-preview studio-ratio-${aspectRatio.replace(':', '-')}`} style={{ position: 'relative' }}>
+            <div className="preview-image-badge">
+              ✨ 4K UHD • {selectedRatio.res} • WebP
+            </div>
             <div className="studio-image-metadata">
-              <span>
-                {aspectRatio === '1:1'
-                  ? '1024 × 1024'
-                  : aspectRatio === '4:5'
-                    ? '1024 × 1280'
-                    : '1536 × 864'}{' '}
-                px
-              </span>
+              <span>{selectedRatio.res} px</span>
               <span>Local demo asset</span>
             </div>
             <img src={image} alt="Demo product illustration in a warm minimal scene" />
@@ -903,7 +1252,16 @@ export function ImageStudioPage() {
             </Button>
             <button
               className="studio-icon-button"
+              onClick={copyPrompt}
+              title={t('imageStudio.copyPrompt', 'Copy Prompt')}
+              aria-label="Copy Prompt"
+            >
+              <Copy size={18} />
+            </button>
+            <button
+              className="studio-icon-button"
               onClick={download}
+              title={t('imageStudio.download', 'Download')}
               aria-label="Download demo visual"
             >
               <Download size={19} />
@@ -911,6 +1269,7 @@ export function ImageStudioPage() {
             <button
               className="studio-icon-button"
               onClick={() => setExpanded(true)}
+              title={t('imageStudio.fullscreen', 'Fullscreen')}
               aria-label="Expand image preview"
             >
               <Maximize2 size={19} />

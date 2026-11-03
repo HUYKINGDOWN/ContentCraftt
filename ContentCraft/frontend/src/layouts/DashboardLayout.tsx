@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   BarChart3,
@@ -7,12 +7,14 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock3,
+  Database,
   Home,
   Image,
   LogOut,
   Menu,
   Moon,
   Package,
+  Search,
   Settings2,
   ShieldCheck,
   Sliders,
@@ -37,7 +39,23 @@ export default function DashboardLayout() {
   const { session, signOut } = useAuth()
   const { contents } = useWorkspace()
   const { theme, toggleTheme } = useTheme()
-  const { language, toggleLanguage, t } = useI18n()
+  const { language, setLanguage, t } = useI18n()
+  const [commandOpen, setCommandOpen] = useState(false)
+  const [commandQuery, setCommandQuery] = useState('')
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setCommandOpen((prev) => !prev)
+      }
+      if (e.key === 'Escape') {
+        setCommandOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const navigation = [
     [ROUTES.dashboard, t('nav.dashboard'), Home],
@@ -114,16 +132,35 @@ export default function DashboardLayout() {
             <span>Workspace</span>
             <span className="crumb-separator">/</span>
             <strong>{title}</strong>
+          </div>          <div className="header-command-search" onClick={() => setCommandOpen(true)} title="Quick command search (Ctrl + K)">
+            <Search size={14} />
+            <span className="search-placeholder">Quick search or create...</span>
+            <span className="kbd-shortcut">Ctrl K</span>
           </div>
           <div className="header-actions">
-            <button
-              className="icon-button"
-              title={language === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
-              onClick={toggleLanguage}
-              style={{ fontWeight: 700, fontSize: '0.85rem', width: 'auto', padding: '0 8px', borderRadius: '8px' }}
-            >
-              {language === 'vi' ? '🇻🇳 VI' : '🇬🇧 EN'}
-            </button>
+            <div className="header-db-pill" title="Microsoft SQL Server (ContentCraftDB) Active">
+              <Database size={13} className="db-icon" />
+              <span className="db-pulse-dot" />
+              <span className="db-name">SQL Server</span>
+            </div>
+            <div className="header-lang-switch" role="group" aria-label="Language selection">
+              <button
+                type="button"
+                className={`lang-opt ${language === 'vi' ? 'active' : ''}`}
+                onClick={() => setLanguage('vi')}
+                title="Chuyển sang Tiếng Việt"
+              >
+                🇻🇳 VI
+              </button>
+              <button
+                type="button"
+                className={`lang-opt ${language === 'en' ? 'active' : ''}`}
+                onClick={() => setLanguage('en')}
+                title="Switch to English"
+              >
+                🇬🇧 EN
+              </button>
+            </div>
 
             <button
               className="icon-button"
@@ -132,14 +169,13 @@ export default function DashboardLayout() {
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            <button
+            </button>            <button
               className="icon-button notification-button"
               aria-label="Open notifications"
               onClick={() => setPanel('notifications')}
             >
               <Bell size={18} />
+              <span className="notif-badge-dot" />
             </button>
             <button
               className="profile-button"
@@ -159,12 +195,12 @@ export default function DashboardLayout() {
         </main>
         <footer className="workspace-footer">
           <span>
-            <span className="status-dot" /> ContentCraft demo · Browser storage
+            <span className="status-dot" /> ContentCraft · SQL Server (SQLEXPRESS)
           </span>
           <Link to={ROUTES.resources}>
             Help & resources <ExternalLink size={11} />
           </Link>
-          <span>v1.0.0</span>
+          <span>v1.2.0 Pro</span>
         </footer>
       </div>
       <Modal
@@ -236,6 +272,78 @@ export default function DashboardLayout() {
           <Sparkles size={17} /> Explore the content studio
         </Button>
       </Modal>
+      {commandOpen && (
+        <div className="command-palette-backdrop" onClick={() => setCommandOpen(false)}>
+          <div className="command-palette-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="command-search-header">
+              <Search size={18} className="command-search-icon" />
+              <input
+                type="text"
+                placeholder={language === 'vi' ? 'Tìm trang, tính năng hoặc thao tác...' : 'Search pages, actions, or jump to...'}
+                autoFocus
+                value={commandQuery}
+                onChange={(e) => setCommandQuery(e.target.value)}
+              />
+              <span className="command-esc-hint">ESC</span>
+            </div>
+
+            <div className="command-results-list">
+              <div className="command-group-title">
+                {language === 'vi' ? 'Trang làm việc' : 'Workspace Pages'}
+              </div>
+              {navigation
+                .filter(([_, label]) => label.toLowerCase().includes(commandQuery.toLowerCase()))
+                .map(([path, label, Icon]) => (
+                  <button
+                    key={path}
+                    type="button"
+                    className="command-item"
+                    onClick={() => {
+                      navigate(path)
+                      setCommandOpen(false)
+                    }}
+                  >
+                    <Icon size={16} />
+                    <span>{label}</span>
+                    <span className="command-jump">Jump to</span>
+                  </button>
+                ))}
+
+              <div className="command-group-title">
+                {language === 'vi' ? 'Thao tác nhanh' : 'Quick Actions'}
+              </div>
+              <button
+                type="button"
+                className="command-item"
+                onClick={() => {
+                  toggleTheme()
+                  setCommandOpen(false)
+                }}
+              >
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+                <span>
+                  {theme === 'dark'
+                    ? (language === 'vi' ? 'Chuyển sang Giao diện Sáng' : 'Switch to Light Theme')
+                    : (language === 'vi' ? 'Chuyển sang Giao diện Tối' : 'Switch to Dark Theme')}
+                </span>
+                <span className="command-badge">Theme</span>
+              </button>
+              <button
+                type="button"
+                className="command-item"
+                onClick={() => {
+                  setLanguage(language === 'vi' ? 'en' : 'vi')
+                  setCommandOpen(false)
+                }}
+              >
+                <Sparkles size={16} />
+                <span>{language === 'vi' ? 'Switch to English (🇬🇧)' : 'Chuyển sang Tiếng Việt (🇻🇳)'}</span>
+                <span className="command-badge">Language</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -37,7 +37,7 @@ export function Field({
   error,
   children,
 }: {
-  label: string
+  label: ReactNode
   error?: string
   children: ReactNode
 }) {

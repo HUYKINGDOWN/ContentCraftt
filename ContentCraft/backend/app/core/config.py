@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "uploads"
 
     # SQL Server parameters
-    DB_SERVER: str = r".\SQLEXPRESS02"
+    DB_SERVER: str = r"localhost\SQLEXPRESS"
     DB_NAME: str = "ContentCraftDB"
     DB_DRIVER: str = "ODBC Driver 18 for SQL Server"
     DB_TRUST_SERVER_CERTIFICATE: str = "yes"

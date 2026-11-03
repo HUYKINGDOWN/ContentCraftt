@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { ChangeEvent, ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,6 +22,10 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  LayoutGrid,
+  List,
+  Zap,
+  Edit3,
   UserRound,
   Users,
 } from 'lucide-react'
@@ -486,6 +491,8 @@ export function ProductsPage() {
   const { products, brands, saveProduct, deleteProduct } = useWorkspace()
   const { notify } = useToast()
   const { t } = useI18n()
+  const navigate = useNavigate()
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState(false)
   const [status, setStatus] = useState('All statuses')
@@ -522,14 +529,35 @@ export function ProductsPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search products, SKUs, or brands..."
+          placeholder={t("products.search", "Search products...")}
         />
         <span className="entity-count">
           <i />
-          {active} active products configured
+          {active} {t("products.activeConfigured", "sản phẩm đang hoạt động")}
         </span>
+
+        {/* View mode toggle */}
+        <div className="entity-view-switch">
+          <button
+            type="button"
+            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title={t('products.gridView', 'Lưới thẻ')}
+          >
+            <LayoutGrid size={16} />
+          </button>
+          <button
+            type="button"
+            className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
+            onClick={() => setViewMode('table')}
+            title={t('products.tableView', 'Bảng chi tiết')}
+          >
+            <List size={16} />
+          </button>
+        </div>
+
         <Button variant="secondary" onClick={() => setFilters(!filters)} aria-expanded={filters}>
-          <SlidersHorizontal size={16} /> Filter
+          <SlidersHorizontal size={16} /> {t("btn.filter", "Filter")}
           {(status !== 'All statuses' || category !== 'All categories') && (
             <span className="entity-filter-dot" />
           )}
@@ -558,51 +586,159 @@ export function ProductsPage() {
           </Field>
         </FilterPanel>
       )}
-      <div className="entity-product-list">
-        {filtered.map((product) => (
-          <div className="entity-product-row" key={product.id}>
-            <button
-              className={`entity-product-identity entity-product-color-${products.indexOf(product) % 4}`}
-              onClick={() => setEditor({ open: true, value: product })}
-            >
-              <span className="entity-product-image">
-                <img src={product.image || '/assets/product-coffee.svg'} alt="" />
+
+      {/* Grid or Table rendering */}
+      {viewMode === 'grid' ? (
+        <div className="entity-products-grid">
+          {filtered.map((product) => {
+            const brand = brands.find((b) => b.id === product.brandId)
+            const featureList = product.features.split(',').map((f) => f.trim()).filter(Boolean)
+            return (
+              <div className="product-card-premium" key={product.id}>
+                <div className="product-card-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Badge tone={product.status === 'Active' ? 'green' : 'gray'}>
+                      {product.category}
+                    </Badge>
+                    {brand && (
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: '#4b5563',
+                          background: 'rgba(0,0,0,0.04)',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                        }}
+                      >
+                        {brand.name}
+                      </span>
+                    )}
+                  </div>
+                  <EntityMenu
+                    label={product.name}
+                    onEdit={() => setEditor({ open: true, value: product })}
+                    onDelete={() =>
+                      setDeleting({
+                        name: product.name,
+                        action: () => {
+                          deleteProduct(product.id)
+                          notify('Product deleted.')
+                        },
+                      })
+                    }
+                  />
+                </div>
+
+                <div
+                  className="product-card-media"
+                  onClick={() => setEditor({ open: true, value: product })}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <img src={product.image || '/assets/product-coffee.svg'} alt={product.name} />
+                </div>
+
+                <div className="product-card-meta">
+                  <h3 className="product-card-title">{product.name}</h3>
+                  <span className="product-card-price">${Number(product.price).toFixed(2)}</span>
+                </div>
+
+                <p className="product-card-desc">{product.description}</p>
+
+                <div className="product-card-features">
+                  {featureList.slice(0, 3).map((feat, idx) => (
+                    <span key={idx} className="product-feature-tag">
+                      {feat}
+                    </span>
+                  ))}
+                  {featureList.length > 3 && (
+                    <span className="product-feature-tag">+{featureList.length - 3}</span>
+                  )}
+                </div>
+
+                <div className="product-card-actions">
+                  <button
+                    type="button"
+                    className="product-ai-btn"
+                    onClick={() =>
+                      navigate(
+                        `/dashboard/content-studio?product=${product.id}&brand=${product.brandId}`,
+                      )
+                    }
+                    title="Generate AI copy with this product context"
+                  >
+                    <Zap size={14} />
+                    {t('products.quickGenerate', 'Tạo nội dung AI')}
+                  </button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setEditor({ open: true, value: product })}
+                    style={{ padding: '8px 12px', fontSize: '12px' }}
+                  >
+                    <Edit3 size={14} />
+                    {t('products.edit', 'Sửa')}
+                  </Button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="entity-product-list">
+          {filtered.map((product) => (
+            <div className="entity-product-row" key={product.id}>
+              <button
+                className={`entity-product-identity entity-product-color-${products.indexOf(product) % 4}`}
+                onClick={() => setEditor({ open: true, value: product })}
+              >
+                <span className="entity-product-image">
+                  <img src={product.image || '/assets/product-coffee.svg'} alt="" />
+                </span>
+                <span>
+                  <strong>{product.name}</strong>
+                  <small>
+                    {brands.find((brand) => brand.id === product.brandId)?.name || 'Unassigned brand'}
+                    <span className="entity-separator">•</span>
+                    {product.features.split(',').filter(Boolean).length} facts
+                  </small>
+                </span>
+              </button>
+              <span className="entity-readiness">
+                <Check size={13} />
+                {product.category} · {product.status === 'Active' ? 'Ready for AI' : 'Incomplete'}
               </span>
-              <span>
-                <strong>{product.name}</strong>
-                <small>
-                  {brands.find((brand) => brand.id === product.brandId)?.name || 'Unassigned brand'}
-                  <span className="entity-separator">•</span>
-                  {product.features.split(',').filter(Boolean).length} facts
-                </small>
-              </span>
-            </button>
-            <span className="entity-readiness">
-              <Check size={13} />
-              {product.category} · {product.status === 'Active' ? 'Ready for AI' : 'Incomplete'}
-            </span>
-            <span className="entity-asset-icons" title="Product illustration and content facts">
-              <Image size={14} />
-              <FileText size={14} />
-              <FileCheck2 size={14} />
-            </span>
-            <Badge tone={product.status === 'Active' ? 'green' : 'gray'}>{product.status}</Badge>
-            <EntityMenu
-              label={product.name}
-              onEdit={() => setEditor({ open: true, value: product })}
-              onDelete={() =>
-                setDeleting({
-                  name: product.name,
-                  action: () => {
-                    deleteProduct(product.id)
-                    notify('Product deleted.')
-                  },
-                })
-              }
-            />
-          </div>
-        ))}
-      </div>
+              <button
+                type="button"
+                className="product-ai-btn"
+                style={{ padding: '6px 12px', fontSize: '11px', flex: 'none' }}
+                onClick={() =>
+                  navigate(
+                    `/dashboard/content-studio?product=${product.id}&brand=${product.brandId}`,
+                  )
+                }
+              >
+                <Zap size={13} />
+                {t('products.quickGenerate', 'Tạo bài viết AI')}
+              </button>
+              <Badge tone={product.status === 'Active' ? 'green' : 'gray'}>{product.status}</Badge>
+              <EntityMenu
+                label={product.name}
+                onEdit={() => setEditor({ open: true, value: product })}
+                onDelete={() =>
+                  setDeleting({
+                    name: product.name,
+                    action: () => {
+                      deleteProduct(product.id)
+                      notify('Product deleted.')
+                    },
+                  })
+                }
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
       {!filtered.length && (
         <EmptyState
           title="No products found"
@@ -669,7 +805,7 @@ function BrandEditor({
   return (
     <Modal
       open={open}
-      title={brand ? 'Brand context & voice' : 'Create a brand'}
+      title={brand ? 'Edit brand' : 'New brand'}
       onClose={onClose}
       footer={
         <>
@@ -677,57 +813,52 @@ function BrandEditor({
             Cancel
           </Button>
           <Button type="submit" form="entity-brand-form">
-            {brand ? 'Save changes' : 'Create brand'}
+            Save brand
           </Button>
         </>
       }
     >
       <p className="entity-modal-description">
-        Define reusable context and a consistent voice for your brand.
+        Define your brand's voice and identity so every draft matches your guidelines.
       </p>
       <form
         id="entity-brand-form"
+        className="entity-form"
         onSubmit={handleSubmit((values) => {
           onSave({ ...values, id: brand?.id || crypto.randomUUID() })
           onClose()
         })}
-        className="entity-form"
         noValidate
       >
         <Field label="Brand name" error={errors.name?.message}>
-          <Input {...register('name')} placeholder="e.g. Aurora Coffee" />
+          <Input {...register('name')} placeholder="e.g. Acme Coffee" />
         </Field>
-        <Field label="Industry" error={errors.industry?.message}>
-          <Input {...register('industry')} placeholder="e.g. Food & Beverage" />
-        </Field>
-        <Field label="About the brand" error={errors.description?.message}>
+        <div className="entity-form-grid">
+          <Field label="Industry" error={errors.industry?.message}>
+            <Input {...register('industry')} placeholder="e.g. Food & Beverage" />
+          </Field>
+          <Field label="Brand color" error={errors.color?.message}>
+            <Input type="color" {...register('color')} />
+          </Field>
+        </div>
+        <Field label="Description" error={errors.description?.message}>
           <textarea className="entity-textarea" rows={3} {...register('description')} />
         </Field>
         <Field label="Brand voice & tone" error={errors.voice?.message}>
-          <textarea
-            className="entity-textarea"
-            rows={2}
-            {...register('voice')}
-            placeholder="Warm, local, approachable. Avoid jargon."
-          />
+          <Input {...register('voice')} placeholder="e.g. Warm, conversational, witty" />
         </Field>
         <Field label="Target audience" error={errors.audience?.message}>
-          <Input {...register('audience')} placeholder="Who are you speaking to?" />
+          <Input {...register('audience')} placeholder="e.g. Coffee lovers, busy professionals" />
         </Field>
-        <Field label="Website (optional)" error={errors.website?.message}>
-          <Input type="url" {...register('website')} placeholder="https://example.com" />
+        <Field label="Website" error={errors.website?.message}>
+          <Input {...register('website')} placeholder="https://example.com" />
         </Field>
-        <div className="entity-form-grid">
-          <Field label="Brand color" error={errors.color?.message}>
-            <Input type="color" className="entity-color-input" {...register('color')} />
-          </Field>
-          <Field label="Status">
-            <Select {...register('status')}>
-              <option>Active</option>
-              <option>Draft</option>
-            </Select>
-          </Field>
-        </div>
+        <Field label="Status">
+          <Select {...register('status')}>
+            <option>Active</option>
+            <option>Draft</option>
+          </Select>
+        </Field>
       </form>
     </Modal>
   )
@@ -768,7 +899,7 @@ export function BrandsPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          placeholder="Search brands or keywords..."
+          placeholder={t("brands.search", "Search brands...")}
         />
         <span className="entity-count">
           <i />
@@ -776,7 +907,7 @@ export function BrandsPage() {
         </span>
         <Button variant="ghost" onClick={() => setFilters(!filters)} aria-expanded={filters}>
           <SlidersHorizontal size={15} />
-          Filter
+          {t("btn.filter", "Filter")}
         </Button>
       </div>
       {filters && (
@@ -1297,6 +1428,7 @@ function MemberEditor({
 export function AdminPage() {
   const { users, products, brands, audiences, contents, saveUser, deleteUser } = useWorkspace()
   const { notify } = useToast()
+  const { t } = useI18n()
   const [tab, setTab] = useState('Users')
   const [search, setSearch] = useState('')
   const [editor, setEditor] = useState<{ open: boolean; value: User | null }>({
@@ -1351,8 +1483,8 @@ export function AdminPage() {
         System & Team
       </span>
       <PageHeading
-        title="Administration"
-        description="Manage users, roles, usage limits and protected operational records."
+        title={t("nav.admin", "Administration")}
+        description={t("admin.desc", "Quản lý thành viên, vai trò, hạn ngạch sử dụng và nhật ký hệ thống.")}
         action={
           <div className="entity-admin-heading-actions">
             <SearchInput
