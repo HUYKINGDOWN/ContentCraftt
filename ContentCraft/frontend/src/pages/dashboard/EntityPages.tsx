@@ -43,6 +43,7 @@ import {
 } from '../../components/ui'
 import { useToast } from '../../contexts/ToastContext'
 import { useWorkspace } from '../../contexts/WorkspaceContext'
+import { SlidingTabs, StaggerContainer, MotionCard } from '../../components/animated'
 import { useI18n } from '../../contexts/I18nContext'
 import type { Audience, Brand, Product, User } from '../../types'
 import './entities.css'
@@ -536,25 +537,17 @@ export function ProductsPage() {
           {active} {t("products.activeConfigured", "sản phẩm đang hoạt động")}
         </span>
 
-        {/* View mode toggle */}
-        <div className="entity-view-switch">
-          <button
-            type="button"
-            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
-            title={t('products.gridView', 'Lưới thẻ')}
-          >
-            <LayoutGrid size={16} />
-          </button>
-          <button
-            type="button"
-            className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
-            onClick={() => setViewMode('table')}
-            title={t('products.tableView', 'Bảng chi tiết')}
-          >
-            <List size={16} />
-          </button>
-        </div>
+        {/* View mode toggle with animated SlidingTabs */}
+        <SlidingTabs
+          layoutId="products-view-switch"
+          activeId={viewMode}
+          onChange={(newMode) => setViewMode(newMode as any)}
+          tabs={[
+            { id: 'grid', label: t('products.gridView', 'Lưới thẻ'), icon: <LayoutGrid size={14} /> },
+            { id: 'table', label: t('products.tableView', 'Bảng chi tiết'), icon: <List size={14} /> },
+          ]}
+          size="sm"
+        />
 
         <Button variant="secondary" onClick={() => setFilters(!filters)} aria-expanded={filters}>
           <SlidersHorizontal size={16} /> {t("btn.filter", "Filter")}
@@ -587,14 +580,14 @@ export function ProductsPage() {
         </FilterPanel>
       )}
 
-      {/* Grid or Table rendering */}
+      {/* Grid or Table rendering with motion animations */}
       {viewMode === 'grid' ? (
-        <div className="entity-products-grid">
+        <StaggerContainer className="entity-products-grid">
           {filtered.map((product) => {
             const brand = brands.find((b) => b.id === product.brandId)
             const featureList = product.features.split(',').map((f) => f.trim()).filter(Boolean)
             return (
-              <div className="product-card-premium" key={product.id}>
+              <MotionCard className="product-card-premium" key={product.id}>
                 <div className="product-card-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Badge tone={product.status === 'Active' ? 'green' : 'gray'}>
@@ -679,10 +672,10 @@ export function ProductsPage() {
                     {t('products.edit', 'Sửa')}
                   </Button>
                 </div>
-              </div>
+              </MotionCard>
             )
           })}
-        </div>
+        </StaggerContainer>
       ) : (
         <div className="entity-product-list">
           {filtered.map((product) => (

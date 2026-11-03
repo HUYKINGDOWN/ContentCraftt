@@ -19,6 +19,7 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { Badge, Button, Input, Modal } from '../../components/ui'
+import { SlidingTabs } from '../../components/animated'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useI18n, type Language } from '../../contexts/I18nContext'
 import { useAuth } from '../../contexts/AuthContext'
@@ -156,50 +157,20 @@ export function SettingsPage() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          borderBottom: '1px solid var(--line)',
-          paddingBottom: '12px',
-          marginBottom: '28px',
-          overflowX: 'auto',
-        }}
-      >
-        {[
-          { key: 'interface', label: t('settings.tab.interface'), icon: Globe },
-          { key: 'ai', label: t('settings.tab.ai'), icon: Sparkles },
-          { key: 'publishing', label: t('settings.tab.publishing'), icon: Share2 },
-          { key: 'data', label: t('settings.tab.data'), icon: Database },
-          { key: 'account', label: t('settings.tab.account'), icon: User },
-        ].map((tab) => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 16px',
-                borderRadius: '12px',
-                fontWeight: isActive ? 700 : 500,
-                fontSize: '13px',
-                background: isActive ? 'var(--card)' : 'transparent',
-                color: isActive ? 'var(--primary)' : 'var(--muted)',
-                border: isActive ? '1px solid var(--line)' : '1px solid transparent',
-                boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.04)' : 'none',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          )
-        })}
+      {/* Navigation Tabs with Animated SlidingTabs */}
+      <div style={{ marginBottom: '28px' }}>
+        <SlidingTabs
+          layoutId="settings-tabs"
+          activeId={activeTab}
+          onChange={(tab) => setActiveTab(tab as any)}
+          tabs={[
+            { id: 'interface', label: t('settings.tab.interface'), icon: <Globe size={15} /> },
+            { id: 'ai', label: t('settings.tab.ai'), icon: <Sparkles size={15} /> },
+            { id: 'publishing', label: t('settings.tab.publishing'), icon: <Share2 size={15} /> },
+            { id: 'data', label: t('settings.tab.data'), icon: <Database size={15} /> },
+            { id: 'account', label: t('settings.tab.account'), icon: <User size={15} /> },
+          ]}
+        />
       </div>
 
       {/* TAB 1: Giao diện & Ngôn ngữ */}

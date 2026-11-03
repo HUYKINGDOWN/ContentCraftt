@@ -28,6 +28,7 @@ import { Badge, BrandMark, Button, Modal } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
 import { useWorkspace } from '../contexts/WorkspaceContext'
 import { useTheme } from '../contexts/ThemeContext'
+import { SlidingTabs } from '../components/animated'
 import { useI18n } from '../contexts/I18nContext'
 import { ROUTES } from '../routes/paths'
 
@@ -143,24 +144,16 @@ export default function DashboardLayout() {
               <span className="db-pulse-dot" />
               <span className="db-name">SQL Server</span>
             </div>
-            <div className="header-lang-switch" role="group" aria-label="Language selection">
-              <button
-                type="button"
-                className={`lang-opt ${language === 'vi' ? 'active' : ''}`}
-                onClick={() => setLanguage('vi')}
-                title="Chuyển sang Tiếng Việt"
-              >
-                🇻🇳 VI
-              </button>
-              <button
-                type="button"
-                className={`lang-opt ${language === 'en' ? 'active' : ''}`}
-                onClick={() => setLanguage('en')}
-                title="Switch to English"
-              >
-                🇬🇧 EN
-              </button>
-            </div>
+            <SlidingTabs
+              layoutId="header-lang-tabs"
+              activeId={language}
+              onChange={(newLang) => setLanguage(newLang as any)}
+              tabs={[
+                { id: 'vi', label: '🇻🇳 VI' },
+                { id: 'en', label: '🇬🇧 EN' },
+              ]}
+              size="sm"
+            />
 
             <button
               className="icon-button"

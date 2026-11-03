@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { AnimatedNumber, StaggerContainer, MotionCard } from '../../components/animated'
 import {
   Wand2,
   Archive,
@@ -214,67 +215,67 @@ export function DashboardPage() {
         description={t('dash.subtitle')}
       />
 
-      <div className="studio-metrics-grid" style={{ marginBottom: '28px' }}>
-        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
+      <StaggerContainer className="studio-metrics-grid" style={{ marginBottom: '28px' }}>
+        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
           <div className="studio-metric-label">
             <span><Building2 size={16} /></span>
             {t('metrics.brands', 'Active Brands')}
           </div>
           <div className="studio-metric-value">
-            {brands.length}
+            <AnimatedNumber value={brands.length} />
             <small>{t('metrics.managed', 'managed')}</small>
           </div>
           <div className="studio-metric-change">
             <TrendingUp size={12} />
             <span>{t('metrics.readyCampaign', 'Ready for campaign')}</span>
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
+        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
           <div className="studio-metric-label">
             <span><Package size={16} /></span>
             {t('metrics.products', 'Product Catalog')}
           </div>
           <div className="studio-metric-value">
-            {products.length}
+            <AnimatedNumber value={products.length} />
             <small>{t('metrics.items', 'items')}</small>
           </div>
           <div className="studio-metric-change">
             <TrendingUp size={12} />
             <span>{t('metrics.syncedDb', 'Synced with DB')}</span>
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/audiences')}>
+        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/audiences')}>
           <div className="studio-metric-label">
             <span><Users size={16} /></span>
             {t('metrics.audiences', 'Target Personas')}
           </div>
           <div className="studio-metric-value">
-            {audiences.length}
+            <AnimatedNumber value={audiences.length} />
             <small>{t('metrics.segments', 'segments')}</small>
           </div>
           <div className="studio-metric-change">
             <TrendingUp size={12} />
             <span>{t('metrics.profiles', 'Audience profiles')}</span>
           </div>
-        </div>
+        </MotionCard>
 
-        <div className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
+        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
           <div className="studio-metric-label">
             <span><Sparkles size={16} /></span>
             {t('metrics.assets', 'Generated Assets')}
           </div>
           <div className="studio-metric-value">
-            {contents.length}
+            <AnimatedNumber value={contents.length} />
             <small>{approvedCount} {t('metrics.approved', 'approved')}</small>
           </div>
           <div className="studio-metric-change">
             <TrendingUp size={12} />
             <span>{draftsCount} {t('metrics.inReview', 'drafts in review')}</span>
           </div>
-        </div>
-      </div>
+        </MotionCard>
+      </StaggerContainer>
 
       
       {/* Real-time System Status Banner */}
