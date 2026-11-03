@@ -294,10 +294,11 @@
 }
 .studio-workspace-grid {
   display: grid;
-  grid-template-columns: minmax(290px, 0.78fr) minmax(0, 1.22fr);
-  gap: 30px;
+  grid-template-columns: minmax(360px, 430px) minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
-  max-width: 1190px;
+  width: 100%;
+  max-width: 100%;
 }
 .studio-workspace-grid > section:nth-child(1) {
   animation: cc-fade-in-up 0.4s cubic-bezier(0.16,1,0.3,1) both;

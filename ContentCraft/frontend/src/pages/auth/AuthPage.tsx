@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
   Eye,
   EyeOff,
   KeyRound,
@@ -52,6 +51,7 @@ type AuthFields = z.infer<ReturnType<typeof makeAuthSchema>>
 export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const isRegister = mode === 'register'
   const [showPass, setShowPass] = useState(false)
+  const [activeActor, setActiveActor] = useState<'admin' | 'user' | null>(null)
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { notify } = useToast()
@@ -77,6 +77,17 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       terms: true,
     },
   })
+
+  const handleSelectActor = (actor: 'admin' | 'user') => {
+    setActiveActor(actor)
+    if (actor === 'admin') {
+      setValue('email', 'admin@contentcraft.io')
+      setValue('password', 'Admin@1234')
+    } else {
+      setValue('email', 'user@contentcraft.io')
+      setValue('password', 'User@1234')
+    }
+  }
 
   const submit = async (values: AuthFields) => {
     try {
@@ -152,124 +163,77 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
   return (
     <main className="auth-page" id="main-content">
-      {/* NÚT BACK TRỞ VỀ TRANG CHỦ BÊN TRÊN PHÍA BÊN TRÁI */}
+      {/* NÚT BACK GÓC TRÊN TRÁI */}
       <Link to="/" className="auth-back-top-left" aria-label="Quay lại trang chủ">
-        <ArrowLeft size={19} />
+        <ArrowLeft size={18} />
         <span>Quay lại Trang Chủ</span>
       </Link>
 
-      <div className="auth-layout-container">
-        {/* Left Side: Giới thiệu hệ thống & Giá trị thực tế */}
-        <aside className="auth-brand-side">
-          <div>
-            <div className="auth-brand-top">
-              <Link to="/" className="auth-brand-logo">
-                <span className="auth-brand-logo-icon">
-                  <Sparkles size={22} fill="currentColor" />
-                </span>
-                <span>ContentCraft</span>
-              </Link>
-              <span className="auth-system-badge">
-                <ShieldCheck size={14} /> Hệ thống Live
+      <div className="auth-card-wrapper">
+        <div className="auth-card">
+          {/* Logo Brand Header */}
+          <div className="auth-card-top">
+            <Link to="/" className="auth-brand-logo">
+              <span className="auth-brand-icon">
+                <Sparkles size={22} fill="currentColor" />
               </span>
-            </div>
-
-            <div className="auth-brand-hero">
-              <h1>
-                Nền tảng Tiếp thị &amp; <span>Sáng tạo Nội dung AI</span>
-              </h1>
-              <p>
-                Không gian làm việc chuyên nghiệp kết hợp giữa công cụ tự động hóa của Quản trị viên và bàn làm việc sáng tạo bài viết, sinh ảnh 4K cho Creator.
-              </p>
-            </div>
-
-            <div className="auth-feature-list">
-              <div className="auth-feature-item">
-                <CheckCircle2 size={19} className="auth-feature-icon" />
-                <div>
-                  <strong>Quản trị viên (Admin):</strong> Giám sát SQL Server, tự động tối ưu cache AI, quản lý thành viên &amp; kiểm duyệt ấn phẩm toàn hệ thống.
-                </div>
-              </div>
-              <div className="auth-feature-item">
-                <CheckCircle2 size={19} className="auth-feature-icon" />
-                <div>
-                  <strong>Người dùng (User / Creator):</strong> Quy trình 4 bước tạo bài viết Gemini AI, sinh ảnh thương mại Flux.1 4K và lưu trữ lịch sử phiên bản.
-                </div>
-              </div>
-              <div className="auth-feature-item">
-                <CheckCircle2 size={19} className="auth-feature-icon" />
-                <div>
-                  <strong>Cơ sở dữ liệu thực tế:</strong> Tích hợp Microsoft SQL Server (SQLEXPRESS) và lưu trữ tệp tin tĩnh máy chủ.
-                </div>
-              </div>
-            </div>
+              <span className="auth-brand-name">ContentCraft</span>
+            </Link>
+            <span className="auth-badge-live">
+              <ShieldCheck size={14} /> SQL Server Live
+            </span>
           </div>
 
-          <div className="auth-brand-footer-note">
-            <Lock size={15} />
-            <span>Xác thực an toàn với thuật toán mã hóa mật khẩu bcrypt</span>
-          </div>
-        </aside>
-
-        {/* Right Side: Form Đăng nhập / Đăng ký */}
-        <section className="auth-form-side">
-          <div className="auth-card-header">
-            <h2 className="auth-card-title">
+          <div className="auth-card-intro">
+            <h1 className="auth-title">
               {isRegister ? 'Tạo tài khoản mới' : 'Đăng nhập vào Hệ thống'}
-            </h2>
-            <p className="auth-card-subtitle">
+            </h1>
+            <p className="auth-subtitle">
               {isRegister
-                ? 'Đăng ký tài khoản để bắt đầu trải nghiệm sáng tạo nội dung'
-                : 'Chọn nhanh vai trò bên dưới hoặc nhập thông tin đăng nhập của bạn:'}
+                ? 'Đăng ký tài khoản để trải nghiệm không gian sáng tạo AI'
+                : 'Chọn 1-click vai trò bên dưới để tự động điền hoặc nhập tài khoản:'}
             </p>
           </div>
 
-          {/* Quick Actor Selector Buttons (Cho 2 vai trò chuẩn Admin & User) */}
+          {/* Quick Actor Selector Pills (Admin / User) */}
           {!isRegister && (
-            <div className="auth-actor-box">
-              <span className="auth-actor-title">1-Click Chọn Nhanh Tài Khoản (Actor Preset):</span>
-              <div className="auth-actor-buttons">
-                <button
-                  type="button"
-                  className="auth-actor-pill-btn actor-admin"
-                  title="Điền tài khoản Admin (Mật khẩu: Admin@1234)"
-                  onClick={() => {
-                    setValue('email', 'admin@contentcraft.io')
-                    setValue('password', 'Admin@1234')
-                  }}
-                >
-                  <span>👑 Admin (Admin@1234)</span>
-                </button>
+            <div className="auth-actor-selector">
+              <button
+                type="button"
+                className={`auth-actor-pill actor-admin ${activeActor === 'admin' ? 'is-selected' : ''}`}
+                onClick={() => handleSelectActor('admin')}
+                title="Tài khoản Quản trị: admin@contentcraft.io (Pass: Admin@1234)"
+              >
+                <span className="actor-pill-badge">👑 Admin</span>
+                <span className="actor-pill-sub">Admin@1234</span>
+              </button>
 
-                <button
-                  type="button"
-                  className="auth-actor-pill-btn actor-user"
-                  title="Điền tài khoản User (Mật khẩu: User@1234)"
-                  onClick={() => {
-                    setValue('email', 'user@contentcraft.io')
-                    setValue('password', 'User@1234')
-                  }}
-                >
-                  <span>✍️ User (User@1234)</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                className={`auth-actor-pill actor-user ${activeActor === 'user' ? 'is-selected' : ''}`}
+                onClick={() => handleSelectActor('user')}
+                title="Tài khoản Người sáng tạo: user@contentcraft.io (Pass: User@1234)"
+              >
+                <span className="actor-pill-badge">✍️ User</span>
+                <span className="actor-pill-sub">User@1234</span>
+              </button>
             </div>
           )}
 
-          <form onSubmit={handleSubmit(submit)} noValidate>
+          <form onSubmit={handleSubmit(submit)} noValidate className="auth-form">
             {isRegister && (
               <div className="auth-form-field">
-                <label className="auth-form-label" htmlFor="fullName">
-                  HỌ VÀ TÊN
+                <label className="auth-label" htmlFor="fullName">
+                  Họ và tên
                 </label>
-                <div className="auth-form-input-wrapper">
+                <div className="auth-input-box">
                   <input
                     id="fullName"
                     autoComplete="name"
                     placeholder="Nguyễn Văn A"
                     {...register('fullName')}
                   />
-                  <User size={19} className="input-end-icon" />
+                  <User size={18} className="auth-input-icon" />
                 </div>
                 {errors.fullName && (
                   <span className="auth-field-error">{errors.fullName.message}</span>
@@ -278,10 +242,10 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             )}
 
             <div className="auth-form-field">
-              <label className="auth-form-label" htmlFor="email">
-                EMAIL ĐĂNG NHẬP
+              <label className="auth-label" htmlFor="email">
+                Email đăng nhập
               </label>
-              <div className="auth-form-input-wrapper">
+              <div className="auth-input-box">
                 <input
                   id="email"
                   type="email"
@@ -289,7 +253,7 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
                   placeholder="admin@contentcraft.io hoặc user@contentcraft.io"
                   {...register('email')}
                 />
-                <Mail size={19} className="input-end-icon" />
+                <Mail size={18} className="auth-input-icon" />
               </div>
               {errors.email && (
                 <span className="auth-field-error">{errors.email.message}</span>
@@ -297,10 +261,12 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             </div>
 
             <div className="auth-form-field">
-              <label className="auth-form-label" htmlFor="password">
-                MẬT KHẨU
-              </label>
-              <div className="auth-form-input-wrapper">
+              <div className="auth-label-row">
+                <label className="auth-label" htmlFor="password">
+                  Mật khẩu
+                </label>
+              </div>
+              <div className="auth-input-box">
                 <input
                   id="password"
                   type={showPass ? 'text' : 'password'}
@@ -310,11 +276,11 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
                 />
                 <button
                   type="button"
-                  className="input-toggle-btn"
+                  className="auth-pass-toggle"
                   title={showPass ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
                   onClick={() => setShowPass(!showPass)}
                 >
-                  {showPass ? <EyeOff size={19} /> : <Eye size={19} />}
+                  {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               {errors.password && (
@@ -324,17 +290,17 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
             {isRegister && (
               <div className="auth-form-field">
-                <label className="auth-form-label" htmlFor="confirmPassword">
-                  XÁC NHẬN MẬT KHẨU
+                <label className="auth-label" htmlFor="confirmPassword">
+                  Xác nhận mật khẩu
                 </label>
-                <div className="auth-form-input-wrapper">
+                <div className="auth-input-box">
                   <input
                     id="confirmPassword"
                     type={showPass ? 'text' : 'password'}
-                    placeholder="Nhập lại mật khẩu"
+                    placeholder="Nhập lại mật khẩu xác nhận"
                     {...register('confirmPassword')}
                   />
-                  <KeyRound size={19} className="input-end-icon" />
+                  <KeyRound size={18} className="auth-input-icon" />
                 </div>
                 {errors.confirmPassword && (
                   <span className="auth-field-error">{errors.confirmPassword.message}</span>
@@ -344,34 +310,32 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
             <button
               type="submit"
-              className="auth-submit-btn"
+              className="auth-btn-submit"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                <span>Đang xử lý...</span>
+                <span>Đang xử lý đăng nhập...</span>
               ) : (
                 <>
-                  <span>{isRegister ? 'Tạo tài khoản' : 'Đăng nhập vào Không gian làm việc'}</span>
-                  <ArrowRight size={19} />
+                  <span>{isRegister ? 'Tạo tài khoản' : 'Đăng nhập vào Hệ thống'}</span>
+                  <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
 
-          <div className="auth-switch-link-row">
+          <div className="auth-card-footer">
             {isRegister ? (
               <span>
-                Đã có tài khoản?
-                <Link to="/login">Đăng nhập ngay</Link>
+                Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link>
               </span>
             ) : (
               <span>
-                Chưa có tài khoản?
-                <Link to="/register">Đăng ký tài khoản mới</Link>
+                Chưa có tài khoản? <Link to="/register">Đăng ký tài khoản mới</Link>
               </span>
             )}
           </div>
-        </section>
+        </div>
       </div>
     </main>
   )
