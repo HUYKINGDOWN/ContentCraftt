@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
+  ArrowLeft,
   BarChart3,
   Bell,
   Building2,
@@ -161,6 +162,35 @@ export default function DashboardLayout() {
               aria-label="Open navigation"
             >
               <Menu size={22} />
+            </button>
+            <button
+              type="button"
+              className="icon-button back-nav-btn"
+              onClick={() => {
+                if (window.history.length > 1) {
+                  window.history.back()
+                } else {
+                  navigate(ROUTES.home)
+                }
+              }}
+              title="Quay lại trang trước"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                borderRadius: '8px',
+                border: '1px solid var(--line)',
+                background: 'var(--card)',
+                color: 'var(--ink)',
+                cursor: 'pointer',
+                fontWeight: 650,
+                fontSize: '12px',
+                marginRight: '6px',
+              }}
+            >
+              <ArrowLeft size={15} />
+              <span>Back</span>
             </button>
             <span>Workspace</span>
             <span className="crumb-separator">/</span>

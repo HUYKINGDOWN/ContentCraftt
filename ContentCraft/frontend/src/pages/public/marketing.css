@@ -3930,3 +3930,118 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
 }
+
+
+/* ==========================================================================
+   GLOBAL ACCESSIBILITY & FONT SCALE BOOST (READABLE FROM 2 METERS)
+   ========================================================================== */
+
+.marketing-shell {
+  font-size: 16px !important;
+}
+
+.mkt-hero h1 {
+  font-size: clamp(38px, 4.8vw, 62px) !important;
+  line-height: 1.15 !important;
+}
+
+.mkt-hero > p {
+  font-size: 19px !important;
+  line-height: 1.65 !important;
+  color: #cbd5e1 !important;
+}
+
+.mkt-button {
+  font-size: 16px !important;
+  min-height: 50px !important;
+  padding: 13px 26px !important;
+  font-weight: 750 !important;
+}
+
+.mkt-check-line span {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
+}
+
+.mkt-eyebrow {
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+  padding: 6px 14px !important;
+}
+
+.actor-switcher-title {
+  font-size: clamp(28px, 3.2vw, 38px) !important;
+  font-weight: 850 !important;
+}
+
+.actor-switcher-subtitle {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+  color: #cbd5e1 !important;
+}
+
+.actor-pill-btn {
+  font-size: 16px !important;
+  padding: 14px 28px !important;
+  border-radius: 16px !important;
+  font-weight: 750 !important;
+}
+
+.actor-name-heading {
+  font-size: 26px !important;
+  font-weight: 850 !important;
+}
+
+.actor-tagline-text {
+  font-size: 16.5px !important;
+  font-weight: 700 !important;
+}
+
+.actor-description-text {
+  font-size: 15.5px !important;
+  line-height: 1.65 !important;
+  color: #cbd5e1 !important;
+}
+
+.actor-cred-label {
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+}
+
+.actor-cred-code {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+.actor-copy-btn,
+.actor-toggle-pass-btn {
+  font-size: 13.5px !important;
+  padding: 6px 12px !important;
+}
+
+.actor-perm-title {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+}
+
+.actor-perm-item {
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+}
+
+.actor-login-btn {
+  font-size: 16px !important;
+  height: 52px !important;
+  font-weight: 800 !important;
+}
+
+.mkt-capability-card h3 {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+}
+
+.mkt-capability-card p {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+}

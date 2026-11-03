@@ -64,8 +64,14 @@
   100% { background-position: 0% 50%; }
 }
 
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
 :root {
   font-family: 'Manrope', sans-serif;
+  font-size: 16px;
   color: #23322f;
   background: #fbfcfa;
   font-synthesis: none;

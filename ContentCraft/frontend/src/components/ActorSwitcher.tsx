@@ -18,8 +18,8 @@ import { useToast } from '../contexts/ToastContext'
 import { apiRequest } from '../services/api'
 
 export interface ActorItem {
-  id: 'admin' | 'user' | 'owner'
-  role: 'Admin' | 'Staff' | 'BrandOwner'
+  id: 'admin' | 'user'
+  role: 'Admin' | 'Staff'
   name: string
   tabLabel: string
   roleBadge: string
@@ -36,64 +36,45 @@ export const ACTOR_LIST: ActorItem[] = [
   {
     id: 'admin',
     role: 'Admin',
-    name: 'System Administrator',
+    name: 'Quản trị viên Hệ thống (System Admin)',
     tabLabel: '👑 Quản trị viên (Admin)',
     roleBadge: 'System Administrator (Toàn quyền)',
-    tagline: 'Toàn quyền kiểm soát, cấu hình hệ thống & phân quyền thành viên',
-    desc: 'Quản trị viên cấp cao có quyền truy cập toàn diện vào mọi phân hệ: mở khóa menu Quản trị hệ thống, quản lý tài khoản thành viên, giám sát SQL Server DB và API AI.',
+    tagline: 'Trung tâm chỉ huy tự động hóa, giám sát hạ tầng & phân quyền bảo mật',
+    desc: 'Dành riêng cho Quản trị viên: Tự động hóa dọn dẹp Cache AI, giám sát trạng thái SQL Server DB, kiểm duyệt ấn phẩm toàn hệ thống và phân quyền tài khoản thành viên.',
     email: 'admin@contentcraft.io',
     password: 'Admin@1234',
     accentColor: '#10b981',
     glowRgb: '16, 185, 129',
     permissions: [
-      { text: 'Mở khóa mục menu độc quyền: Quản trị hệ thống (Admin & RBAC)', allowed: true },
-      { text: 'Quản lý tài khoản người dùng, phân quyền và trạng thái bảo mật', allowed: true },
-      { text: 'Giám sát hoạt động kết nối SQL Server (ContentCraftDB) và AI Models', allowed: true },
-      { text: 'Toàn quyền xem, chỉnh sửa tất cả Thương hiệu, Sản phẩm và Nội dung', allowed: true },
+      { text: 'Mở khóa mục độc quyền: Bảng điều khiển Quản trị hệ thống (Admin Console & RBAC)', allowed: true },
+      { text: 'Tự động hóa hệ thống: Dọn dẹp Cache AI, đồng bộ tức thời SQL Server DB', allowed: true },
+      { text: 'Kiểm duyệt và phê duyệt ấn phẩm marketing của toàn bộ thành viên', allowed: true },
+      { text: 'Quản lý tài khoản người dùng, phân quyền và khóa/mở khóa thành viên', allowed: true },
     ],
   },
   {
     id: 'user',
     role: 'Staff',
-    name: 'Nguyễn Văn User (Creator)',
-    tabLabel: '✍️ Nhân viên sáng tạo (User)',
+    name: 'Chuyên viên Sáng tạo (Content Creator)',
+    tabLabel: '✍️ Người dùng sáng tạo (User / Creator)',
     roleBadge: 'Content Creator (Nhân viên sáng tạo)',
-    tagline: 'Chuyên gia sáng tạo nội dung đa kênh & thiết kế đồ họa AI Flux.1',
-    desc: 'Giao diện tinh gọn tối ưu cho Writer và Designer: sinh bài viết tự động với Gemini AI, tạo ảnh sản phẩm 4K với Flux.1 Engine, lưu trữ và quản lý phiên bản nội dung.',
+    tagline: 'Bàn làm việc sáng tạo nội dung đa kênh & thiết kế đồ họa AI Flux.1',
+    desc: 'Không gian làm việc năng suất cao: Quy trình 4 bước sáng tạo bài viết đa kênh SEO/Social với Gemini AI, sinh ảnh sản phẩm 4K với Flux.1 Engine và lưu trữ lịch sử phiên bản.',
     email: 'user@contentcraft.io',
     password: 'User@1234',
     accentColor: '#38bdf8',
     glowRgb: '56, 189, 248',
     permissions: [
-      { text: 'Sử dụng AI Content Studio sáng tạo bài viết đa kênh SEO & Social', allowed: true },
-      { text: 'Sử dụng Flux.1 AI Image Studio sinh hình ảnh sản phẩm chân thực 4K', allowed: true },
-      { text: 'Lưu trữ bản thảo và quản lý lịch sử phiên bản (Save as version)', allowed: true },
-      { text: 'Ẩn hoàn toàn menu Quản trị hệ thống (bảo mật phân quyền công ty)', allowed: false, note: 'Không có quyền Admin' },
-    ],
-  },
-  {
-    id: 'owner',
-    role: 'BrandOwner',
-    name: 'Brand Director (Owner)',
-    tabLabel: '💼 Chủ thương hiệu (Brand Owner)',
-    roleBadge: 'Brand Owner (Chủ sở hữu thương hiệu)',
-    tagline: 'Thiết lập định vị thương hiệu, chân dung khách hàng & duyệt ấn phẩm',
-    desc: 'Chủ sở hữu hoặc Giám đốc thương hiệu: định hình bản sắc nhận diện thương hiệu (Brand voice & guidelines), xây dựng tệp đối tượng mục tiêu và kiểm duyệt ấn phẩm marketing.',
-    email: 'owner@contentcraft.io',
-    password: 'Owner@1234',
-    accentColor: '#a855f7',
-    glowRgb: '168, 85, 247',
-    permissions: [
-      { text: 'Thiết lập và quản lý hồ sơ định vị thương hiệu (Brand Identity & Voice)', allowed: true },
-      { text: 'Xây dựng hồ sơ chân dung khách hàng mục tiêu (Target Audiences)', allowed: true },
-      { text: 'Kiểm duyệt và phê duyệt trạng thái ấn phẩm (Reviewed / Approved)', allowed: true },
-      { text: 'Theo dõi phân tích hiệu suất và thống kê chuyển đổi chiến dịch', allowed: true },
+      { text: 'Sử dụng Gemini AI Content Studio sáng tạo bài viết đa kênh SEO & Social', allowed: true },
+      { text: 'Sử dụng Flux.1 AI Image Studio sinh hình ảnh sản phẩm chân thực chuẩn 4K', allowed: true },
+      { text: 'Lưu trữ bản thảo và quản lý lịch sử phiên bản (Save as version & History)', allowed: true },
+      { text: 'Ẩn hoàn toàn menu Quản trị hệ thống (bảo mật phân quyền, tránh thao tác nhầm)', allowed: false, note: 'Giới hạn an toàn' },
     ],
   },
 ]
 
 export default function ActorSwitcher() {
-  const [selectedId, setSelectedId] = useState<'admin' | 'user' | 'owner'>('admin')
+  const [selectedId, setSelectedId] = useState<'admin' | 'user'>('admin')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const { signIn } = useAuth()
@@ -114,7 +95,6 @@ export default function ActorSwitcher() {
   const handle1ClickLogin = async () => {
     setIsLoggingIn(true)
     try {
-      // Gọi API đăng nhập backend thật để lấy token & verify hash password
       try {
         const res = await apiRequest<{
           id: number
@@ -140,7 +120,6 @@ export default function ActorSwitcher() {
           true,
         )
       } catch (backendErr) {
-        // Fallback demo session an toàn
         console.warn('Backend login fallback:', backendErr)
         signIn(
           {
@@ -172,12 +151,12 @@ export default function ActorSwitcher() {
     <div className="actor-switcher-wrapper">
       <div className="actor-switcher-header">
         <div className="actor-kicker-tag">
-          <Sparkles size={14} />
-          <span>BỘ CHUYỂN ĐỔI ACTOR / ROLE HỆ THỐNG</span>
+          <Sparkles size={16} />
+          <span>BỘ CHUYỂN ĐỔI 2 VAI TRÒ HỆ THỐNG (ACTOR SWITCHER)</span>
         </div>
-        <h2 className="actor-switcher-title">Trải nghiệm phân quyền thực tế với từng vai trò</h2>
+        <h2 className="actor-switcher-title">Trải nghiệm phân quyền & giao diện chuyên biệt cho từng Actor</h2>
         <p className="actor-switcher-subtitle">
-          Chọn một vai trò dưới đây để xem mật khẩu riêng biệt, quyền hạn đặc thù và đăng nhập nhanh 1-click vào hệ thống:
+          Hệ thống được thiết kế với 2 vai trò cốt lõi rõ rệt: Quản trị viên điều hành toàn diện vs Người dùng chuyên tâm sáng tạo:
         </p>
       </div>
 
@@ -195,7 +174,7 @@ export default function ActorSwitcher() {
                 isActive
                   ? {
                       borderColor: actor.accentColor,
-                      boxShadow: `0 0 20px rgba(${actor.glowRgb}, 0.25)`,
+                      boxShadow: `0 0 24px rgba(${actor.glowRgb}, 0.35)`,
                     }
                   : undefined
               }
@@ -215,8 +194,8 @@ export default function ActorSwitcher() {
       <div
         className="actor-display-card"
         style={{
-          borderTop: `3px solid ${currentActor.accentColor}`,
-          boxShadow: `0 15px 35px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(${currentActor.glowRgb}, 0.12)`,
+          borderTop: `4px solid ${currentActor.accentColor}`,
+          boxShadow: `0 20px 40px -10px rgba(0, 0, 0, 0.7), 0 0 35px rgba(${currentActor.glowRgb}, 0.15)`,
         }}
       >
         <div className="actor-card-top">
@@ -224,17 +203,17 @@ export default function ActorSwitcher() {
             <span
               className="actor-role-badge"
               style={{
-                backgroundColor: `rgba(${currentActor.glowRgb}, 0.15)`,
+                backgroundColor: `rgba(${currentActor.glowRgb}, 0.18)`,
                 color: currentActor.accentColor,
-                borderColor: `rgba(${currentActor.glowRgb}, 0.35)`,
+                borderColor: `rgba(${currentActor.glowRgb}, 0.4)`,
               }}
             >
-              <ShieldCheck size={14} />
+              <ShieldCheck size={16} />
               {currentActor.roleBadge}
             </span>
             <span className="actor-db-sync-tag">
               <span className="db-live-dot" />
-              Đã đồng bộ SQL Server
+              Đã kết nối SQL Server (ContentCraftDB)
             </span>
           </div>
 
@@ -247,7 +226,7 @@ export default function ActorSwitcher() {
         <div className="actor-credentials-container">
           <div className="actor-cred-field">
             <span className="actor-cred-label">
-              <Mail size={13} /> EMAIL ĐĂNG NHẬP
+              <Mail size={15} /> EMAIL ĐĂNG NHẬP
             </span>
             <div className="actor-cred-value-row">
               <code className="actor-cred-code">{currentActor.email}</code>
@@ -257,7 +236,7 @@ export default function ActorSwitcher() {
                 title="Sao chép email"
                 onClick={() => copyToClipboard(currentActor.email, 'Email')}
               >
-                <Copy size={14} />
+                <Copy size={15} />
                 <span>Copy</span>
               </button>
             </div>
@@ -265,7 +244,7 @@ export default function ActorSwitcher() {
 
           <div className="actor-cred-field">
             <span className="actor-cred-label">
-              <KeyRound size={13} /> MẬT KHẨU RIÊNG BIỆT
+              <KeyRound size={15} /> MẬT KHẨU RIÊNG BIỆT
             </span>
             <div className="actor-cred-value-row">
               <code className="actor-cred-code">
@@ -278,7 +257,7 @@ export default function ActorSwitcher() {
                   title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
                 <button
                   type="button"
@@ -286,7 +265,7 @@ export default function ActorSwitcher() {
                   title="Sao chép mật khẩu"
                   onClick={() => copyToClipboard(currentActor.password, 'Mật khẩu')}
                 >
-                  <Copy size={14} />
+                  <Copy size={15} />
                   <span>Copy</span>
                 </button>
               </div>
@@ -296,7 +275,7 @@ export default function ActorSwitcher() {
 
         {/* Permissions Grid */}
         <div className="actor-permissions-block">
-          <h4 className="actor-perm-title">Quyền hạn truy cập trong hệ thống:</h4>
+          <h4 className="actor-perm-title">Quyền hạn & Giao diện chuyên biệt khi đăng nhập:</h4>
           <div className="actor-perm-grid">
             {currentActor.permissions.map((perm, idx) => (
               <div
@@ -304,9 +283,9 @@ export default function ActorSwitcher() {
                 className={`actor-perm-item ${perm.allowed ? 'is-allowed' : 'is-restricted'}`}
               >
                 {perm.allowed ? (
-                  <CheckCircle2 size={16} className="perm-icon-check" />
+                  <CheckCircle2 size={18} className="perm-icon-check" />
                 ) : (
-                  <ShieldAlert size={16} className="perm-icon-alert" />
+                  <ShieldAlert size={18} className="perm-icon-alert" />
                 )}
                 <div className="perm-text-wrap">
                   <span className="perm-text">{perm.text}</span>
@@ -324,14 +303,14 @@ export default function ActorSwitcher() {
             className="actor-login-btn primary-actor-btn"
             style={{
               backgroundColor: currentActor.accentColor,
-              boxShadow: `0 4px 18px rgba(${currentActor.glowRgb}, 0.4)`,
+              boxShadow: `0 6px 22px rgba(${currentActor.glowRgb}, 0.45)`,
             }}
             disabled={isLoggingIn}
             onClick={handle1ClickLogin}
           >
-            <LogIn size={17} />
-            <span>{isLoggingIn ? 'Đang đăng nhập...' : `Đăng nhập ngay với ${currentActor.tabLabel}`}</span>
-            <Zap size={15} />
+            <LogIn size={19} />
+            <span>{isLoggingIn ? 'Đang xác thực...' : `🚀 Đăng nhập ngay với ${currentActor.tabLabel}`}</span>
+            <Zap size={17} />
           </button>
 
           <button
@@ -339,7 +318,7 @@ export default function ActorSwitcher() {
             className="actor-login-btn secondary-actor-btn"
             onClick={handleFillLoginForm}
           >
-            <span>Tự điền vào form Đăng nhập</span>
+            <span>Tự điền vào Form Đăng nhập</span>
           </button>
         </div>
       </div>

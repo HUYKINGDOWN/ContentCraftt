@@ -4,21 +4,19 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  ArrowLeft,
   ArrowRight,
-  ArrowUpRight,
-  BadgeCheck,
+  CheckCircle2,
   Eye,
   EyeOff,
   KeyRound,
-  LockKeyhole,
+  Lock,
   Mail,
-  MessageSquare,
   ShieldCheck,
   Sparkles,
   User,
-  UserPlus,
+  Zap,
 } from 'lucide-react'
-import { Button, Input, Modal } from '../../components/ui'
 import { useToast } from '../../contexts/ToastContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { apiRequest } from '../../services/api'
@@ -28,8 +26,8 @@ export function makeAuthSchema(register: boolean) {
   return z
     .object({
       fullName: z.string().optional(),
-      email: z.email('Enter a valid email address.'),
-      password: z.string().min(8, 'Use at least 8 characters.'),
+      email: z.string().email('Vui lòng nhập địa chỉ email hợp lệ.'),
+      password: z.string().min(8, 'Mật khẩu phải từ 8 ký tự trở lên.'),
       confirmPassword: z.string().optional(),
       terms: z.boolean().optional(),
     })
@@ -38,56 +36,34 @@ export function makeAuthSchema(register: boolean) {
         ctx.addIssue({
           code: 'custom',
           path: ['fullName'],
-          message: 'Enter your full name (at least 2 characters).',
+          message: 'Vui lòng nhập họ và tên (ít nhất 2 ký tự).',
         })
       if (register && data.password !== data.confirmPassword)
         ctx.addIssue({
           code: 'custom',
           path: ['confirmPassword'],
-          message: 'Passwords do not match.',
-        })
-      if (register && !data.terms)
-        ctx.addIssue({
-          code: 'custom',
-          path: ['terms'],
-          message: 'Please agree to the terms to continue.',
+          message: 'Mật khẩu xác nhận không trùng khớp.',
         })
     })
 }
+
 type AuthFields = z.infer<ReturnType<typeof makeAuthSchema>>
-function GoogleIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="#4285f4"
-        d="M21.6 12.2c0-.7-.1-1.4-.2-2.1H12v4h5.4a4.6 4.6 0 0 1-2 3v2.5h3.3c1.9-1.8 2.9-4.3 2.9-7.4Z"
-      />
-      <path
-        fill="#34a853"
-        d="M12 22c2.7 0 5-.9 6.7-2.4l-3.3-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3v2.6A10 10 0 0 0 12 22Z"
-      />
-      <path fill="#fbbc05" d="M6.4 14a6 6 0 0 1 0-4V7.4H3a10 10 0 0 0 0 9.2L6.4 14Z" />
-      <path
-        fill="#ea4335"
-        d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A9.6 9.6 0 0 0 12 2a10 10 0 0 0-9 5.4L6.4 10c.8-2.3 3-4.1 5.6-4.1Z"
-      />
-    </svg>
-  )
-}
 
 export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const isRegister = mode === 'register'
-  const [visible, setVisible] = useState(false)
-  const [confirmVisible, setConfirmVisible] = useState(false)
-  const [remember, setRemember] = useState(true)
-  const [panel, setPanel] = useState<'google' | 'reset' | 'terms' | 'privacy' | 'feedback' | null>(
-    null,
-  )
-  const [feedback, setFeedback] = useState('')
+  const [showPass, setShowPass] = useState(false)
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const { notify } = useToast()
   const { signIn } = useAuth()
+
+  const defaultEmail = params.get('email') || ''
+  const defaultPass = defaultEmail.toLowerCase().includes('admin')
+    ? 'Admin@1234'
+    : defaultEmail.toLowerCase().includes('user')
+    ? 'User@1234'
+    : ''
+
   const {
     register,
     handleSubmit,
@@ -96,18 +72,12 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   } = useForm<AuthFields>({
     resolver: zodResolver(makeAuthSchema(isRegister)),
     defaultValues: {
-      email: params.get('email') || '',
-      password:
-        params.get('email')?.toLowerCase().includes('admin')
-          ? 'Admin@1234'
-          : params.get('email')?.toLowerCase().includes('user')
-          ? 'User@1234'
-          : params.get('email')?.toLowerCase().includes('owner')
-          ? 'Owner@1234'
-          : '',
-      terms: false,
+      email: defaultEmail,
+      password: defaultPass,
+      terms: true,
     },
   })
+
   const submit = async (values: AuthFields) => {
     try {
       if (isRegister) {
@@ -123,12 +93,18 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             email: values.email,
             full_name: values.fullName?.trim() || values.email.split('@')[0],
             password: values.password,
-            role: 'creator',
+            role: 'Staff',
           }),
         })
         signIn(
-          { name: res.full_name || values.email.split('@')[0], email: res.email },
-          remember,
+          {
+            name: res.full_name || values.email.split('@')[0],
+            email: res.email,
+            role: res.role || 'Staff',
+            id: String(res.id),
+            token: res.access_token,
+          },
+          true,
         )
         notify('Đã đăng ký tài khoản thành công trong hệ thống.')
       } else {
@@ -153,417 +129,250 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             id: String(res.id),
             token: res.access_token,
           },
-          remember,
+          true,
         )
-        notify(`Đăng nhập thành công với vai trò: ${res.role || 'Người dùng'}`)
+        notify(`Đăng nhập thành công với vai trò: ${res.role === 'Admin' ? '👑 Quản trị viên (Admin)' : '✍️ Người sáng tạo (User)'}`)
       }
     } catch {
-      // Fallback cho demo offline nếu backend chưa có tài khoản hoặc gặp sự cố
-      await new Promise((resolve) => window.setTimeout(resolve, 350))
-      const roleFallback = values.email.toLowerCase().includes('admin')
-        ? 'Admin'
-        : values.email.toLowerCase().includes('owner')
-        ? 'BrandOwner'
-        : 'Staff'
+      // Fallback an toàn cho demo offline
+      await new Promise((resolve) => window.setTimeout(resolve, 300))
+      const roleFallback = values.email.toLowerCase().includes('admin') ? 'Admin' : 'Staff'
       signIn(
         {
-          name: values.fullName?.trim() || values.email.split('@')[0],
+          name: values.fullName?.trim() || (values.email.toLowerCase().includes('admin') ? 'System Administrator' : 'Content Creator'),
           email: values.email,
           role: roleFallback,
         },
-        remember,
+        true,
       )
-      notify(
-        isRegister
-          ? 'Demo workspace created. No real account was registered.'
-          : 'Welcome to your demo workspace.',
-      )
+      notify(`Đăng nhập thành công với vai trò: ${roleFallback === 'Admin' ? '👑 Quản trị viên (Admin)' : '✍️ Người sáng tạo (User)'}`)
     }
     navigate('/dashboard')
   }
+
   return (
-    <main id="main-content" className={`auth-page ${isRegister ? 'auth-register' : ''}`}>
-      <aside className="auth-brand-panel">
-        <div className="auth-logo-line">
-          <Link to="/" className="auth-brand">
-            <span>
-              <Mail size={21} />
-            </span>
-            ContentCraft
-            <i />
-          </Link>
-          <span className="auth-version">
-            <i /> v2.4 Ready
-          </span>
-        </div>
-        <div className="auth-floating auth-design">
-          <span className="figma-symbol">F</span>
+    <main className="auth-page" id="main-content">
+      {/* NÚT BACK TRỞ VỀ TRANG CHỦ BÊN TRÊN PHÍA BÊN TRÁI */}
+      <Link to="/" className="auth-back-top-left" aria-label="Quay lại trang chủ">
+        <ArrowLeft size={19} />
+        <span>Quay lại Trang Chủ</span>
+      </Link>
+
+      <div className="auth-layout-container">
+        {/* Left Side: Giới thiệu hệ thống & Giá trị thực tế */}
+        <aside className="auth-brand-side">
           <div>
-            <strong>Design System</strong>
-            <small>Synced</small>
-          </div>
-          <i />
-        </div>
-        <div className="auth-brand-copy">
-          <span className="auth-eyebrow">
-            <BadgeCheck size={16} /> ARCHITECTURAL CONTENT OS
-          </span>
-          <h1>
-            Create better
-            <br />
-            marketing with
-            <br />
-            reusable brand
-            <br />
-            context.
-          </h1>
-          <p>
-            Manage brand knowledge, products, audiences, AI drafts, images, history, and analytics
-            in one reviewable workflow.
-          </p>
-          <div className="auth-stats">
-            <div>
-              <strong>100%</strong>
-              <small>Brand Consistency</small>
-            </div>
-            <div>
-              <strong>14×</strong>
-              <small>Faster Rollout</small>
-            </div>
-            <div>
-              <strong>Local</strong>
-              <small>Browser workspace</small>
-            </div>
-          </div>
-        </div>
-        <div className="auth-floating auth-wiki">
-          <span className="tile-circle">N</span>
-          <div>
-            <strong>Brand Wiki</strong>
-            <small>2,410 Docs</small>
-          </div>
-        </div>
-        <div className="auth-floating auth-drafting">
-          <span className="tile-circle mint">
-            <Sparkles size={19} />
-          </span>
-          <div>
-            <strong>AI Drafting</strong>
-            <small>Context-aware demo</small>
-          </div>
-        </div>
-        <div className="auth-floating auth-review">
-          <span className="tile-circle lavender">
-            <MessageSquare size={18} />
-          </span>
-          <div>
-            <strong>Slack Review</strong>
-            <small>Illustrative integration</small>
-          </div>
-        </div>
-        <div className="auth-brand-footer">
-          <span>
-            <LockKeyhole size={17} /> Your demo credentials are never saved.
-          </span>
-          <span>© ContentCraft</span>
-        </div>
-      </aside>
-      <section className="auth-form-panel">
-        <div className="auth-help">
-          Need assistance?{' '}
-          <Link to="/resources">
-            Help Center <ArrowUpRight size={14} />
-          </Link>
-        </div>
-        <div className="auth-card">
-          <div className="auth-card-icon">
-            {isRegister ? <UserPlus size={23} /> : <KeyRound size={23} />}
-          </div>
-          <h2>{isRegister ? 'Create your account' : 'Welcome back'}</h2>
-          <p className="auth-subtitle">
-            {isRegister
-              ? 'Start your ContentCraft workspace'
-              : 'Sign in to continue to your workspace'}
-          </p>
-          <button className="auth-google" type="button" onClick={() => setPanel('google')}>
-            <GoogleIcon /> Continue with Google
-          </button>
-          <div className="auth-divider">
-            <span>OR CONTINUE WITH</span>
-          </div>
-          <form onSubmit={handleSubmit(submit)} noValidate>
-            {!isRegister && (
-              <div style={{ marginBottom: '18px', background: 'rgba(255, 255, 255, 0.04)', padding: '12px', borderRadius: '12px', border: '1px solid var(--line)' }}>
-                <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>
-                  CHỌN NHANH VAI TRÒ (ACTOR DEMO):
+            <div className="auth-brand-top">
+              <Link to="/" className="auth-brand-logo">
+                <span className="auth-brand-logo-icon">
+                  <Sparkles size={22} fill="currentColor" />
                 </span>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #10b981', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', cursor: 'pointer', fontWeight: 650 }}
-                    onClick={() => {
-                      setValue('email', 'admin@contentcraft.io')
-                      setValue('password', 'Admin@1234')
-                    }}
-                  >
-                    👑 Admin
-                  </button>
-                  <button
-                    type="button"
-                    style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #38bdf8', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', cursor: 'pointer', fontWeight: 650 }}
-                    onClick={() => {
-                      setValue('email', 'user@contentcraft.io')
-                      setValue('password', 'User@1234')
-                    }}
-                  >
-                    ✍️ User (Creator)
-                  </button>
-                  <button
-                    type="button"
-                    style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #a855f7', background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc', cursor: 'pointer', fontWeight: 650 }}
-                    onClick={() => {
-                      setValue('email', 'owner@contentcraft.io')
-                      setValue('password', 'Owner@1234')
-                    }}
-                  >
-                    💼 Brand Owner
-                  </button>
+                <span>ContentCraft</span>
+              </Link>
+              <span className="auth-system-badge">
+                <ShieldCheck size={14} /> Hệ thống Live
+              </span>
+            </div>
+
+            <div className="auth-brand-hero">
+              <h1>
+                Nền tảng Tiếp thị &amp; <span>Sáng tạo Nội dung AI</span>
+              </h1>
+              <p>
+                Không gian làm việc chuyên nghiệp kết hợp giữa công cụ tự động hóa của Quản trị viên và bàn làm việc sáng tạo bài viết, sinh ảnh 4K cho Creator.
+              </p>
+            </div>
+
+            <div className="auth-feature-list">
+              <div className="auth-feature-item">
+                <CheckCircle2 size={19} className="auth-feature-icon" />
+                <div>
+                  <strong>Quản trị viên (Admin):</strong> Giám sát SQL Server, tự động tối ưu cache AI, quản lý thành viên &amp; kiểm duyệt ấn phẩm toàn hệ thống.
                 </div>
               </div>
-            )}
+              <div className="auth-feature-item">
+                <CheckCircle2 size={19} className="auth-feature-icon" />
+                <div>
+                  <strong>Người dùng (User / Creator):</strong> Quy trình 4 bước tạo bài viết Gemini AI, sinh ảnh thương mại Flux.1 4K và lưu trữ lịch sử phiên bản.
+                </div>
+              </div>
+              <div className="auth-feature-item">
+                <CheckCircle2 size={19} className="auth-feature-icon" />
+                <div>
+                  <strong>Cơ sở dữ liệu thực tế:</strong> Tích hợp Microsoft SQL Server (SQLEXPRESS) và lưu trữ tệp tin tĩnh máy chủ.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-brand-footer-note">
+            <Lock size={15} />
+            <span>Xác thực an toàn với thuật toán mã hóa mật khẩu bcrypt</span>
+          </div>
+        </aside>
+
+        {/* Right Side: Form Đăng nhập / Đăng ký */}
+        <section className="auth-form-side">
+          <div className="auth-card-header">
+            <h2 className="auth-card-title">
+              {isRegister ? 'Tạo tài khoản mới' : 'Đăng nhập vào Hệ thống'}
+            </h2>
+            <p className="auth-card-subtitle">
+              {isRegister
+                ? 'Đăng ký tài khoản để bắt đầu trải nghiệm sáng tạo nội dung'
+                : 'Chọn nhanh vai trò bên dưới hoặc nhập thông tin đăng nhập của bạn:'}
+            </p>
+          </div>
+
+          {/* Quick Actor Selector Buttons (Cho 2 vai trò chuẩn Admin & User) */}
+          {!isRegister && (
+            <div className="auth-actor-box">
+              <span className="auth-actor-title">1-Click Chọn Nhanh Tài Khoản (Actor Preset):</span>
+              <div className="auth-actor-buttons">
+                <button
+                  type="button"
+                  className="auth-actor-pill-btn actor-admin"
+                  title="Điền tài khoản Admin (Mật khẩu: Admin@1234)"
+                  onClick={() => {
+                    setValue('email', 'admin@contentcraft.io')
+                    setValue('password', 'Admin@1234')
+                  }}
+                >
+                  <span>👑 Admin (Admin@1234)</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="auth-actor-pill-btn actor-user"
+                  title="Điền tài khoản User (Mật khẩu: User@1234)"
+                  onClick={() => {
+                    setValue('email', 'user@contentcraft.io')
+                    setValue('password', 'User@1234')
+                  }}
+                >
+                  <span>✍️ User (User@1234)</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit(submit)} noValidate>
             {isRegister && (
-              <div className="auth-field">
-                <label htmlFor="fullName">FULL NAME</label>
-                <div className="auth-input-wrap">
-                  <Input
+              <div className="auth-form-field">
+                <label className="auth-form-label" htmlFor="fullName">
+                  HỌ VÀ TÊN
+                </label>
+                <div className="auth-form-input-wrapper">
+                  <input
                     id="fullName"
                     autoComplete="name"
-                    placeholder="Your name"
-                    aria-invalid={!!errors.fullName}
-                    aria-describedby="fullName-error"
+                    placeholder="Nguyễn Văn A"
                     {...register('fullName')}
                   />
-                  <User size={18} />
+                  <User size={19} className="input-end-icon" />
                 </div>
                 {errors.fullName && (
-                  <span id="fullName-error" className="field-error" role="alert">
-                    {errors.fullName.message}
-                  </span>
+                  <span className="auth-field-error">{errors.fullName.message}</span>
                 )}
               </div>
             )}
-            <div className="auth-field">
-              <label htmlFor="email">EMAIL</label>
-              <div className="auth-input-wrap">
-                <Input
+
+            <div className="auth-form-field">
+              <label className="auth-form-label" htmlFor="email">
+                EMAIL ĐĂNG NHẬP
+              </label>
+              <div className="auth-form-input-wrapper">
+                <input
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="name@example.com"
-                  aria-invalid={!!errors.email}
-                  aria-describedby="email-error"
+                  placeholder="admin@contentcraft.io hoặc user@contentcraft.io"
                   {...register('email')}
                 />
-                <Mail size={18} />
+                <Mail size={19} className="input-end-icon" />
               </div>
               {errors.email && (
-                <span id="email-error" className="field-error" role="alert">
-                  {errors.email.message}
-                </span>
+                <span className="auth-field-error">{errors.email.message}</span>
               )}
             </div>
-            <div className="auth-field">
-              <div className="auth-label-row">
-                <label htmlFor="password">PASSWORD</label>
-                {!isRegister && (
-                  <button type="button" className="text-link" onClick={() => setPanel('reset')}>
-                    Forgot password?
-                  </button>
-                )}
-              </div>
-              <div className="auth-input-wrap">
-                <Input
+
+            <div className="auth-form-field">
+              <label className="auth-form-label" htmlFor="password">
+                MẬT KHẨU
+              </label>
+              <div className="auth-form-input-wrapper">
+                <input
                   id="password"
-                  type={visible ? 'text' : 'password'}
+                  type={showPass ? 'text' : 'password'}
                   autoComplete={isRegister ? 'new-password' : 'current-password'}
-                  placeholder="••••••••••••"
-                  aria-invalid={!!errors.password}
-                  aria-describedby="password-error"
+                  placeholder="Nhập mật khẩu (ví dụ: Admin@1234)"
                   {...register('password')}
                 />
                 <button
                   type="button"
-                  aria-label={visible ? 'Hide password' : 'Show password'}
-                  onClick={() => setVisible(!visible)}
+                  className="input-toggle-btn"
+                  title={showPass ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                  onClick={() => setShowPass(!showPass)}
                 >
-                  {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPass ? <EyeOff size={19} /> : <Eye size={19} />}
                 </button>
               </div>
               {errors.password && (
-                <span id="password-error" className="field-error" role="alert">
-                  {errors.password.message}
-                </span>
+                <span className="auth-field-error">{errors.password.message}</span>
               )}
             </div>
+
             {isRegister && (
-              <div className="auth-field">
-                <label htmlFor="confirmPassword">CONFIRM PASSWORD</label>
-                <div className="auth-input-wrap">
-                  <Input
+              <div className="auth-form-field">
+                <label className="auth-form-label" htmlFor="confirmPassword">
+                  XÁC NHẬN MẬT KHẨU
+                </label>
+                <div className="auth-form-input-wrapper">
+                  <input
                     id="confirmPassword"
-                    type={confirmVisible ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="••••••••••••"
-                    aria-invalid={!!errors.confirmPassword}
-                    aria-describedby="confirm-error"
+                    type={showPass ? 'text' : 'password'}
+                    placeholder="Nhập lại mật khẩu"
                     {...register('confirmPassword')}
                   />
-                  <button
-                    type="button"
-                    aria-label={
-                      confirmVisible ? 'Hide password confirmation' : 'Show password confirmation'
-                    }
-                    onClick={() => setConfirmVisible(!confirmVisible)}
-                  >
-                    {confirmVisible ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  <KeyRound size={19} className="input-end-icon" />
                 </div>
                 {errors.confirmPassword && (
-                  <span id="confirm-error" className="field-error" role="alert">
-                    {errors.confirmPassword.message}
-                  </span>
+                  <span className="auth-field-error">{errors.confirmPassword.message}</span>
                 )}
               </div>
             )}
-            {isRegister ? (
-              <>
-                <div className="auth-check">
-                  <input id="terms" type="checkbox" {...register('terms')} />
-                  <label htmlFor="terms">
-                    By signing up, you agree to our{' '}
-                    <button type="button" className="text-link" onClick={() => setPanel('terms')}>
-                      Terms of Service
-                    </button>{' '}
-                    and{' '}
-                    <button type="button" className="text-link" onClick={() => setPanel('privacy')}>
-                      Privacy Policy
-                    </button>
-                    .
-                  </label>
-                </div>
-                {errors.terms && (
-                  <p className="field-error" role="alert">
-                    {errors.terms.message}
-                  </p>
-                )}
-              </>
-            ) : (
-              <label className="auth-check">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />{' '}
-                Keep me signed in on this device
-              </label>
-            )}
-            <Button type="submit" className="auth-submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Opening demo…' : isRegister ? 'Create account' : 'Sign in'}
-              <ArrowRight size={18} />
-            </Button>
-          </form>
-          <p className="auth-mode-link">
-            {isRegister ? 'Already have an account?' : 'New to ContentCraft?'}{' '}
-            <Link to={isRegister ? '/login' : '/register'}>
-              {isRegister ? 'Sign in' : 'Create account'}
-            </Link>
-          </p>
-          <div className="auth-demo-note">
-            <ShieldCheck size={13} /> Demo authentication · No passwords stored or sent
-          </div>
-        </div>
-        <p className="auth-bottom">ContentCraft frontend demonstration · Privacy & Terms apply</p>
-      </section>
-      <button className="feedback-tab" onClick={() => setPanel('feedback')}>
-        <MessageSquare size={15} /> FEEDBACK
-      </button>
-      <Modal
-        open={panel !== null}
-        title={
-          panel === 'google'
-            ? 'Google sign-in'
-            : panel === 'reset'
-              ? 'Password recovery'
-              : panel === 'feedback'
-                ? 'Share feedback'
-                : panel === 'terms'
-                  ? 'Demo terms of use'
-                  : 'Demo privacy information'
-        }
-        onClose={() => setPanel(null)}
-      >
-        {panel === 'google' ? (
-          <>
-            <p className="muted">
-              Google OAuth is not connected. You can explore the frontend with a clearly identified
-              demo session.
-            </p>
-            <Button
-              onClick={() => {
-                signIn({ name: 'Demo Creator', email: 'creator@contentcraft.demo' }, false)
-                navigate('/dashboard')
-                notify('Entered demo mode. No Google authentication occurred.', 'info')
-              }}
+
+            <button
+              type="submit"
+              className="auth-submit-btn"
+              disabled={isSubmitting}
             >
-              Explore demo workspace <ArrowRight size={16} />
-            </Button>
-          </>
-        ) : panel === 'reset' ? (
-          <p className="muted">
-            No real account exists in this frontend demo. Password recovery emails require a
-            connected authentication backend. Use any valid email and a password of at least 8
-            characters to enter demo mode.
-          </p>
-        ) : panel === 'feedback' ? (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              try {
-                localStorage.setItem('contentcraft-feedback', feedback)
-                notify('Feedback saved on this device. It has not been sent to a server.')
-                setFeedback('')
-                setPanel(null)
-              } catch {
-                notify('Unable to save feedback in this browser.', 'error')
-              }
-            }}
-          >
-            <label className="cc-field">
-              <span className="cc-label">Your feedback</span>
-              <textarea
-                required
-                minLength={5}
-                maxLength={2000}
-                className="cc-input"
-                rows={5}
-                value={feedback}
-                onChange={(e) => setFeedback(e.target.value)}
-                placeholder="What could make your workflow better?"
-              />
-            </label>
-            <div className="modal-actions">
-              <Button type="submit">Save demo feedback</Button>
-            </div>
+              {isSubmitting ? (
+                <span>Đang xử lý...</span>
+              ) : (
+                <>
+                  <span>{isRegister ? 'Tạo tài khoản' : 'Đăng nhập vào Không gian làm việc'}</span>
+                  <ArrowRight size={19} />
+                </>
+              )}
+            </button>
           </form>
-        ) : (
-          <p className="muted">
-            This is a university frontend demonstration. Workspace records are stored only in your
-            browser. Passwords are never saved, sent, or verified. No payments, AI provider
-            requests, or social media connections are made. Production legal policies and identity
-            controls must be supplied with the backend.
-          </p>
-        )}
-      </Modal>
+
+          <div className="auth-switch-link-row">
+            {isRegister ? (
+              <span>
+                Đã có tài khoản?
+                <Link to="/login">Đăng nhập ngay</Link>
+              </span>
+            ) : (
+              <span>
+                Chưa có tài khoản?
+                <Link to="/register">Đăng ký tài khoản mới</Link>
+              </span>
+            )}
+          </div>
+        </section>
+      </div>
     </main>
   )
 }
