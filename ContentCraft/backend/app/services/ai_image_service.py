@@ -1,11 +1,13 @@
 import os
 import random
 import urllib.parse
+import urllib.request
+import uuid
 from typing import Optional
 
 
 class AIImageService:
-    """Dịch vụ sinh hình ảnh AI marketing chất lượng cao (hỗ trợ Flux.1, SDXL, DALL-E 3)."""
+    """Dịch vụ sinh hình ảnh AI marketing chất lượng cao (hỗ trợ Flux.1, SDXL)."""
 
     DIMENSIONS = {
         "1:1": (1024, 1024),
@@ -31,7 +33,7 @@ class AIImageService:
     ):
         clean_prompt = prompt.strip() if prompt else "A premium marketing product display"
 
-        # Tối ưu hóa prompt với từ khóa phong cách nếu có
+        # Tối ưu hóa prompt với từ khóa phong cách
         style_enrichment = self.STYLE_KEYWORDS.get(style or "", "")
         if style_enrichment and style_enrichment.lower() not in clean_prompt.lower():
             full_prompt = f"{clean_prompt}, {style_enrichment}"
@@ -41,16 +43,36 @@ class AIImageService:
         width, height = self.DIMENSIONS.get(aspect_ratio, (1024, 1024))
         seed = random.randint(1000, 999999)
 
-        # Sử dụng Pollinations AI (Flux.1 Engine) trực tiếp cho hình ảnh marketing chất lượng cao
+        # Sử dụng Pollinations AI (Flux.1 Engine)
         encoded_prompt = urllib.parse.quote(full_prompt)
-        ai_image_url = (
+        remote_url = (
             f"https://image.pollinations.ai/prompt/{encoded_prompt}"
             f"?width={width}&height={height}&model=flux&seed={seed}&nologo=true"
         )
 
+        # Tải và lưu trữ ảnh cục bộ trong uploads/generated để phục vụ nhanh chóng và lưu trữ vĩnh viễn
+        final_image_url = remote_url
+        try:
+            filename = f"ai_{uuid.uuid4().hex[:12]}.jpg"
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            generated_dir = os.path.join(current_dir, "uploads", "generated")
+            os.makedirs(generated_dir, exist_ok=True)
+            local_path = os.path.join(generated_dir, filename)
+
+            req = urllib.request.Request(remote_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            with urllib.request.urlopen(req, timeout=12) as response:
+                if response.status == 200:
+                    with open(local_path, "wb") as f:
+                        f.write(response.read())
+                    final_image_url = f"http://localhost:8000/uploads/generated/{filename}"
+        except Exception as e:
+            # Nếu tải về bị timeout, dùng trực tiếp link AI từ Pollinations
+            print(f"Warning: could not cache AI image locally: {e}")
+            final_image_url = remote_url
+
         return {
             "prompt": full_prompt,
-            "image_url": ai_image_url,
+            "image_url": final_image_url,
             "aspect_ratio": aspect_ratio,
             "width": width,
             "height": height,

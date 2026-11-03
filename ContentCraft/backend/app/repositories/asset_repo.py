@@ -17,3 +17,11 @@ class AssetRepository:
         self.db.commit()
         self.db.refresh(item)
         return item
+
+    def delete(self, item_id: int):
+        item = self.get(item_id)
+        if item is None:
+            return False
+        self.db.delete(item)
+        self.db.commit()
+        return True

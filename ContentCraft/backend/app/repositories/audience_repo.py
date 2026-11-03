@@ -1,6 +1,21 @@
 from sqlalchemy.orm import Session
 from app.models.audience_model import Audience
 
+
+def normalize_audience_data(data: dict) -> dict:
+    data = data.copy()
+    data.pop("platform", None)
+
+    # Normalize gender: ('Other' | 'Female' | 'Male' | 'All')
+    gender = str(data.get("gender", "All")).capitalize()
+    if gender not in ("Other", "Female", "Male", "All"):
+        data["gender"] = "All"
+    else:
+        data["gender"] = gender
+
+    return data
+
+
 class AudienceRepository:
     def __init__(self, db: Session):
         self.db = db
@@ -12,8 +27,7 @@ class AudienceRepository:
         return self.db.get(Audience, item_id)
 
     def create(self, data: dict):
-        data = data.copy()
-        data.pop("platform", None)
+        data = normalize_audience_data(data)
         item = Audience(**data)
         self.db.add(item)
         self.db.commit()
@@ -24,8 +38,7 @@ class AudienceRepository:
         item = self.get(item_id)
         if item is None:
             return None
-        data = data.copy()
-        data.pop("platform", None)
+        data = normalize_audience_data(data)
         for key, value in data.items():
             if value is not None and hasattr(item, key):
                 setattr(item, key, value)

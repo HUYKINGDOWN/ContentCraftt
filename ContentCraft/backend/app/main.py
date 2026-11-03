@@ -1,7 +1,9 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import Base, engine
 from app import models  # register all model metadata
@@ -38,6 +40,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Thư mục lưu trữ assets và hình ảnh AI sinh ra
+uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+os.makedirs(os.path.join(uploads_dir, "generated"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 
 @app.get("/", include_in_schema=False)

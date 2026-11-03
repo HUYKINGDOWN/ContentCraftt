@@ -293,22 +293,18 @@ export const backendSync = {
       const list = await apiRequest<BackendContent[]>('/contents')
       if (!Array.isArray(list)) return []
       return list.map((c) => {
-        const isVisual = Boolean(c.image || c.generated_image_url || c.content_type === 'Product visual')
+        const isVisual = Boolean(c.image || c.generated_image_url || c.content_type === 'AIImage' || c.content_type === 'Product visual')
+        const uiStatus = (c.status === 'Reviewed' ? 'In review' : (c.status || 'Draft')) as Content['status']
         return {
           id: String(c.id),
           title: c.title,
           body: c.body,
-          type: c.content_type || (isVisual ? 'Product visual' : 'Social post'),
+          type: isVisual ? 'Product visual' : (c.content_type || 'Social post'),
           channel: c.platform || 'Facebook',
           brandId: c.brand_id ? String(c.brand_id) : '',
           productId: c.product_id ? String(c.product_id) : '',
           audienceId: c.target_customer_id ? String(c.target_customer_id) : '',
-          status:
-            c.status === 'Approved'
-              ? 'Approved'
-              : c.status === 'In review'
-                ? 'In review'
-                : 'Draft',
+          status: uiStatus,
           createdAt: c.created_at
             ? new Date(c.created_at).toISOString().split('T')[0]
             : new Date().toISOString().split('T')[0],
@@ -327,15 +323,36 @@ export const backendSync = {
       const numericBrandId = parseInt(content.brandId, 10)
       const numericProductId = parseInt(content.productId, 10)
       const numericAudienceId = parseInt(content.audienceId, 10)
+
+      let mappedContentType = 'Caption'
+      if (content.kind === 'image' || content.type === 'Product visual' || content.image) {
+        mappedContentType = 'AIImage'
+      } else if (content.type?.toLowerCase().includes('promo')) {
+        mappedContentType = 'PromoIdea'
+      } else if (content.type?.toLowerCase().includes('desc')) {
+        mappedContentType = 'ProductDescription'
+      }
+
+      let mappedStatus = content.status === 'In review' ? 'Reviewed' : (content.status || 'Draft')
+      if (!['Draft', 'Reviewed', 'Approved', 'Published'].includes(mappedStatus)) {
+        mappedStatus = 'Draft'
+      }
+
+      let mappedPlatform = content.channel || 'Facebook'
+      if (mappedPlatform.toLowerCase().includes('insta')) mappedPlatform = 'Instagram'
+      else if (mappedPlatform.toLowerCase().includes('tik')) mappedPlatform = 'TikTok'
+      else if (mappedPlatform.toLowerCase().includes('face')) mappedPlatform = 'Facebook'
+      else mappedPlatform = 'Web'
+
       const payload = {
         title: content.title,
         body: content.body,
-        status: content.status,
-        platform: content.channel || 'Facebook',
+        status: mappedStatus,
+        platform: mappedPlatform,
         brand_id: isNaN(numericBrandId) ? 1 : numericBrandId,
         product_id: isNaN(numericProductId) ? null : numericProductId,
         target_customer_id: isNaN(numericAudienceId) ? null : numericAudienceId,
-        content_type: content.type || (content.kind === 'image' ? 'Product visual' : 'Social post'),
+        content_type: mappedContentType,
         image: content.image || null,
         generated_image_url: content.image || null,
       }

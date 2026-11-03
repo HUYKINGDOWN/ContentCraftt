@@ -4,6 +4,63 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 
 
+def normalize_content_data(data: dict) -> dict:
+    data = data.copy()
+
+    # 1. Image
+    if data.get("image") and not data.get("generated_image_url"):
+        data["generated_image_url"] = data.get("image")
+
+    # 2. Normalize content_type: ('AIImage' | 'PromoIdea' | 'ProductDescription' | 'Caption')
+    ct = str(data.get("content_type", "")).lower()
+    if data.get("generated_image_url") or "image" in ct or "visual" in ct:
+        data["content_type"] = "AIImage"
+    elif "promo" in ct or "idea" in ct:
+        data["content_type"] = "PromoIdea"
+    elif "desc" in ct or "product" in ct:
+        data["content_type"] = "ProductDescription"
+    else:
+        data["content_type"] = "Caption"
+
+    # 3. Normalize status: ('Draft' | 'Reviewed' | 'Approved' | 'Published')
+    st = str(data.get("status", "Draft"))
+    if st.lower() in ("in review", "in_review", "review", "reviewed"):
+        data["status"] = "Reviewed"
+    elif st.lower() in ("approved", "approve"):
+        data["status"] = "Approved"
+    elif st.lower() in ("published", "publish"):
+        data["status"] = "Published"
+    else:
+        data["status"] = "Draft"
+
+    # 4. Normalize platform: ('Web' | 'Instagram' | 'TikTok' | 'Facebook')
+    pf = str(data.get("target_platform") or data.get("platform") or "Facebook").lower()
+    if "insta" in pf:
+        data["target_platform"] = "Instagram"
+    elif "tik" in pf:
+        data["target_platform"] = "TikTok"
+    elif "face" in pf:
+        data["target_platform"] = "Facebook"
+    else:
+        data["target_platform"] = "Web"
+    data.pop("platform", None)
+
+    # 5. Normalize language: ('EN' | 'VI')
+    lang = str(data.get("language_preference", "VI")).upper()
+    data["language_preference"] = "EN" if "EN" in lang else "VI"
+
+    # 6. Title and Body
+    if not data.get("prompt_used") and data.get("title"):
+        data["prompt_used"] = data.get("title")
+    if not data.get("generated_text") and data.get("body"):
+        data["generated_text"] = data.get("body")
+
+    data.pop("title", None)
+    data.pop("body", None)
+    data.pop("image", None)
+    return data
+
+
 class Content(Base):
     __tablename__ = "GeneratedContents"
     __table_args__ = {"schema": "dbo"}
@@ -77,23 +134,8 @@ class Content(Base):
     )
 
     def __init__(self, **kwargs):
-        if "brand_id" not in kwargs or kwargs["brand_id"] is None:
-            kwargs["brand_id"] = 1
-        if "content_type" not in kwargs or not kwargs["content_type"]:
-            kwargs["content_type"] = "Caption"
-        if not kwargs.get("target_platform"):
-            kwargs["target_platform"] = kwargs.get("platform", "Facebook")
-        if "language_preference" not in kwargs or not kwargs["language_preference"]:
-            kwargs["language_preference"] = "VI"
-        if "status" not in kwargs or not kwargs["status"]:
-            kwargs["status"] = "Draft"
-        if not kwargs.get("prompt_used") and kwargs.get("title"):
-            kwargs["prompt_used"] = kwargs.get("title")
-        if not kwargs.get("generated_text") and kwargs.get("body"):
-            kwargs["generated_text"] = kwargs.get("body")
-        if not kwargs.get("generated_image_url") and kwargs.get("image"):
-            kwargs["generated_image_url"] = kwargs.get("image")
-        super().__init__(**kwargs)
+        norm = normalize_content_data(kwargs)
+        super().__init__(**norm)
 
     @property
     def content_id(self) -> int:

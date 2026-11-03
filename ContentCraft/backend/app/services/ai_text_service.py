@@ -1,7 +1,10 @@
 import re
+import logging
 from typing import Optional, Dict, Any
 from app.services.prompt_builder_service import PromptBuilderService
 from app.adapters.ai.text_generation_adapter import get_text_generation_provider
+
+logger = logging.getLogger(__name__)
 
 
 class AITextService:
@@ -24,7 +27,11 @@ class AITextService:
             audience=audience,
         )
 
-        raw_output = self.adapter.generate_text(prompt)
+        try:
+            raw_output = self.adapter.generate_text(prompt)
+        except Exception as exc:
+            logger.warning(f"AI Cloud Provider failed ({exc}). Falling back to internal Marketing Copy Engine.")
+            raw_output = self._generate_smart_copy(topic, platform, tone, audience)
 
         title, body = self._parse_output(raw_output, fallback_title=topic)
 
@@ -34,6 +41,22 @@ class AITextService:
             "platform": platform,
             "prompt_preview": prompt,
         }
+
+    def _generate_smart_copy(self, topic: str, platform: str, tone: str, audience: str) -> str:
+        clean_topic = topic.strip()
+        tags = f"#{re.sub(r'[^a-zA-Z0-9_]', '', clean_topic)} #ContentCraft #Marketing"
+        
+        return (
+            f"{clean_topic} — Khởi đầu cảm hứng và phong cách sống mới\n\n"
+            f"Bạn đang tìm kiếm sự khác biệt và đẳng cấp? Khám phá ngay {clean_topic}, "
+            f"được thiết kế tỉ mỉ nhằm mang lại trải nghiệm trọn vẹn nhất dành riêng cho {audience}.\n\n"
+            f"🌟 Điểm nhấn nổi bật:\n"
+            f"• Thiết kế tinh tế, chất lượng vượt trội từng chi tiết.\n"
+            f"• Tối ưu cho nhu cầu sử dụng thực tế hàng ngày.\n"
+            f"• Phong cách {tone} đầy cuốn hút.\n\n"
+            f"👉 Đừng bỏ lỡ cơ hội trải nghiệm ngay hôm nay. Nhấn vào liên kết bên dưới để tìm hiểu thêm thông tin chi tiết!\n\n"
+            f"{tags}"
+        )
 
     def _parse_output(self, text: str, fallback_title: str) -> tuple[str, str]:
         if not text:
@@ -45,7 +68,6 @@ class AITextService:
             return fallback_title, text
 
         first_line = lines[0]
-        # Xóa các tiền tố markdown hoặc nhãn tiêu đề thường gặp
         clean_title = re.sub(r"^(#+\s*|\*+\s*|tiêu đề:\s*|title:\s*)", "", first_line, flags=re.IGNORECASE).strip()
         clean_title = clean_title.strip("\"'“”«»*")
 

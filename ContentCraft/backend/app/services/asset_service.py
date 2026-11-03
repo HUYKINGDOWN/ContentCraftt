@@ -19,3 +19,9 @@ class AssetService:
         if hasattr(data, "model_dump"):
             data = data.model_dump()
         return self.repo.create(data)
+
+    def delete(self, item_id: int):
+        success = self.repo.delete(item_id)
+        if not success:
+            raise not_found("Asset")
+        return {"success": True, "id": item_id}
