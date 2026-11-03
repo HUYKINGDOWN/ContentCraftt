@@ -48,8 +48,8 @@ export interface User {
   id: string
   name: string
   email: string
-  role: 'Admin' | 'Editor' | 'Reviewer'
-  status: 'Active' | 'Invited' | 'Suspended'
+  role: 'Admin' | 'BrandOwner' | 'Staff' | 'Editor' | 'Reviewer'
+  status: 'Active' | 'Invited' | 'Suspended' | 'Inactive' | 'Blocked'
 }
 export interface WorkspaceData {
   products: Product[]
@@ -61,4 +61,7 @@ export interface WorkspaceData {
 export interface DemoSession {
   name: string
   email: string
+  role?: 'Admin' | 'BrandOwner' | 'Staff' | 'Editor' | 'Reviewer' | string
+  id?: string
+  token?: string
 }

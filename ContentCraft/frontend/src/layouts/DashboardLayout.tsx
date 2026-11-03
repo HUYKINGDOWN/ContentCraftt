@@ -58,7 +58,28 @@ export default function DashboardLayout() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const navigation = [
+  const isAdmin =
+    session?.role === 'Admin' ||
+    (!session?.role && session?.email?.toLowerCase().includes('admin'))
+  const isBrandOwner =
+    session?.role === 'BrandOwner' ||
+    (!session?.role && session?.email?.toLowerCase().includes('owner'))
+  const isUser = !isAdmin && !isBrandOwner
+
+  const roleMeta = isAdmin
+    ? { label: '👑 Admin', className: 'badge-admin', title: 'Quản trị viên' }
+    : isBrandOwner
+    ? { label: '💼 Brand Owner', className: 'badge-owner', title: 'Chủ sở hữu' }
+    : { label: '✍️ Creator (User)', className: 'badge-user', title: 'Nhân viên sáng tạo' }
+
+  // RBAC Route Guard: Nếu User thông thường vào /admin, redirect về /dashboard
+  useEffect(() => {
+    if (location.pathname === ROUTES.admin && !isAdmin) {
+      navigate(ROUTES.dashboard, { replace: true })
+    }
+  }, [location.pathname, isAdmin, navigate])
+
+  const allNavigation = [
     [ROUTES.dashboard, t('nav.dashboard'), Home],
     [ROUTES.brands, t('nav.brands'), Building2],
     [ROUTES.products, t('nav.products'), Package],
@@ -70,6 +91,12 @@ export default function DashboardLayout() {
     [ROUTES.admin, t('nav.admin'), ShieldCheck],
     [ROUTES.settings, t('nav.settings'), Sliders],
   ] as const
+
+  // RBAC: Ẩn mục Quản trị hệ thống đối với User / Creator
+  const navigation = allNavigation.filter(([path]) => {
+    if (path === ROUTES.admin && !isAdmin) return false
+    return true
+  })
 
   const title = navigation.find(([path]) => location.pathname === path)?.[1] || t('nav.workspace')
   return (
@@ -85,6 +112,11 @@ export default function DashboardLayout() {
         <Link className="sidebar-brand" to={ROUTES.home} aria-label="ContentCraft home">
           <BrandMark />
         </Link>
+        <div className="sidebar-actor-badge">
+          <span className={`actor-role-pill ${roleMeta.className}`} title={roleMeta.title}>
+            {roleMeta.label}
+          </span>
+        </div>
         <button
           className="icon-button sidebar-close"
           aria-label="Close navigation"
@@ -170,6 +202,9 @@ export default function DashboardLayout() {
               <Bell size={18} />
               <span className="notif-badge-dot" />
             </button>
+            <span className={`actor-role-pill ${roleMeta.className}`} title="Vai trò hiện tại">
+              {roleMeta.label}
+            </span>
             <button
               className="profile-button"
               onClick={() => setPanel('profile')}

@@ -64,8 +64,8 @@ const workspaceSchema = z.object({
       id: text,
       name: text,
       email: text,
-      role: z.enum(['Admin', 'Editor', 'Reviewer']),
-      status: z.enum(['Active', 'Invited', 'Suspended']),
+      role: z.string(),
+      status: z.string(),
     }),
   ),
 })
@@ -74,7 +74,7 @@ export function readWorkspace(raw: string | null): WorkspaceData {
   if (!raw) return structuredClone(seed)
   try {
     const result = workspaceSchema.safeParse(JSON.parse(raw))
-    return result.success ? result.data : structuredClone(seed)
+    return result.success ? (result.data as WorkspaceData) : structuredClone(seed)
   } catch {
     return structuredClone(seed)
   }

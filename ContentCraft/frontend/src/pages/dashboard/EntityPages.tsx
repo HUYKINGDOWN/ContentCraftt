@@ -91,8 +91,8 @@ const audienceSchema = z.object({
 const userSchema = z.object({
   name: z.string().trim().min(2, 'Enter the member’s full name.').max(100),
   email: z.string().trim().email('Enter a valid email address.'),
-  role: z.enum(['Admin', 'Editor', 'Reviewer']),
-  status: z.enum(['Active', 'Invited', 'Suspended']),
+  role: z.enum(['Admin', 'BrandOwner', 'Staff', 'Editor', 'Reviewer']),
+  status: z.enum(['Active', 'Invited', 'Suspended', 'Inactive', 'Blocked']),
 })
 type ProductFormValues = z.infer<typeof productSchema>
 type BrandFormValues = z.infer<typeof brandSchema>

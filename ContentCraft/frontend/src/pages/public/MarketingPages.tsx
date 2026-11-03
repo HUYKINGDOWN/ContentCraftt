@@ -1,3 +1,4 @@
+import ActorSwitcher from '../../components/ActorSwitcher'
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -262,6 +263,7 @@ export function FeaturesPage() {
           <CheckText>100% Brand Voice Consistency</CheckText>
           <CheckText>No credit card required</CheckText>
         </div>
+        <ActorSwitcher />
       </section>
       <section className="mkt-container mkt-capabilities">
         <SectionTitle

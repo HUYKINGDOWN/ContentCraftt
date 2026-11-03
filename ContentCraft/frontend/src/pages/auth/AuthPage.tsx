@@ -91,10 +91,22 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<AuthFields>({
     resolver: zodResolver(makeAuthSchema(isRegister)),
-    defaultValues: { email: params.get('email') || '', terms: false },
+    defaultValues: {
+      email: params.get('email') || '',
+      password:
+        params.get('email')?.toLowerCase().includes('admin')
+          ? 'Admin@1234'
+          : params.get('email')?.toLowerCase().includes('user')
+          ? 'User@1234'
+          : params.get('email')?.toLowerCase().includes('owner')
+          ? 'Owner@1234'
+          : '',
+      terms: false,
+    },
   })
   const submit = async (values: AuthFields) => {
     try {
@@ -134,16 +146,31 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           }),
         })
         signIn(
-          { name: res.full_name || values.email.split('@')[0], email: res.email },
+          {
+            name: res.full_name || values.email.split('@')[0],
+            email: res.email,
+            role: res.role,
+            id: String(res.id),
+            token: res.access_token,
+          },
           remember,
         )
-        notify('Đăng nhập thành công vào ContentCraft.')
+        notify(`Đăng nhập thành công với vai trò: ${res.role || 'Người dùng'}`)
       }
     } catch {
       // Fallback cho demo offline nếu backend chưa có tài khoản hoặc gặp sự cố
       await new Promise((resolve) => window.setTimeout(resolve, 350))
+      const roleFallback = values.email.toLowerCase().includes('admin')
+        ? 'Admin'
+        : values.email.toLowerCase().includes('owner')
+        ? 'BrandOwner'
+        : 'Staff'
       signIn(
-        { name: values.fullName?.trim() || values.email.split('@')[0], email: values.email },
+        {
+          name: values.fullName?.trim() || values.email.split('@')[0],
+          email: values.email,
+          role: roleFallback,
+        },
         remember,
       )
       notify(
@@ -265,6 +292,45 @@ export default function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             <span>OR CONTINUE WITH</span>
           </div>
           <form onSubmit={handleSubmit(submit)} noValidate>
+            {!isRegister && (
+              <div style={{ marginBottom: '18px', background: 'rgba(255, 255, 255, 0.04)', padding: '12px', borderRadius: '12px', border: '1px solid var(--line)' }}>
+                <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--muted)', marginBottom: '8px', letterSpacing: '0.04em' }}>
+                  CHỌN NHANH VAI TRÒ (ACTOR DEMO):
+                </span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #10b981', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', cursor: 'pointer', fontWeight: 650 }}
+                    onClick={() => {
+                      setValue('email', 'admin@contentcraft.io')
+                      setValue('password', 'Admin@1234')
+                    }}
+                  >
+                    👑 Admin
+                  </button>
+                  <button
+                    type="button"
+                    style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #38bdf8', background: 'rgba(56, 189, 248, 0.12)', color: '#38bdf8', cursor: 'pointer', fontWeight: 650 }}
+                    onClick={() => {
+                      setValue('email', 'user@contentcraft.io')
+                      setValue('password', 'User@1234')
+                    }}
+                  >
+                    ✍️ User (Creator)
+                  </button>
+                  <button
+                    type="button"
+                    style={{ fontSize: '12px', padding: '6px 10px', borderRadius: '8px', border: '1px solid #a855f7', background: 'rgba(168, 85, 247, 0.12)', color: '#c084fc', cursor: 'pointer', fontWeight: 650 }}
+                    onClick={() => {
+                      setValue('email', 'owner@contentcraft.io')
+                      setValue('password', 'Owner@1234')
+                    }}
+                  >
+                    💼 Brand Owner
+                  </button>
+                </div>
+              </div>
+            )}
             {isRegister && (
               <div className="auth-field">
                 <label htmlFor="fullName">FULL NAME</label>

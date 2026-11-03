@@ -511,8 +511,8 @@ export const backendSync = {
         id: String(u.id),
         name: u.full_name,
         email: u.email,
-        role: (u.role === 'Admin' ? 'Admin' : u.role === 'Reviewer' ? 'Reviewer' : 'Editor') as User['role'],
-        status: (u.status === 'Suspended' ? 'Suspended' : u.status === 'Invited' ? 'Invited' : 'Active') as User['status'],
+        role: (u.role || 'Staff') as User['role'],
+        status: (u.status || 'Active') as User['status'],
       }))
     } catch (err) {
       console.warn('Could not fetch users from backend:', err)
