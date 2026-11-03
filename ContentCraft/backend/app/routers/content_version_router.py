@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.schemas.content_version_schema import ContentVersionCreate, ContentVersionRead
@@ -8,8 +8,11 @@ router = APIRouter(prefix="/content-versions", tags=["content-versions"])
 
 
 @router.get("", response_model=list[ContentVersionRead])
-def list_items(db: Session = Depends(get_db)):
-    return ContentVersionService(db).list()
+def list_items(
+    content_id: int | None = Query(None, description="Lọc theo content_id"),
+    db: Session = Depends(get_db),
+):
+    return ContentVersionService(db).list(content_id=content_id)
 
 
 @router.post("", response_model=ContentVersionRead)

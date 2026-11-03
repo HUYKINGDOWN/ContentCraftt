@@ -6,8 +6,8 @@ class ContentVersionService:
     def __init__(self, db: Session):
         self.repo = ContentVersionRepository(db)
 
-    def list(self):
-        return self.repo.list()
+    def list(self, content_id: int | None = None):
+        return self.repo.list(content_id=content_id)
 
     def get(self, item_id: int):
         item = self.repo.get(item_id)

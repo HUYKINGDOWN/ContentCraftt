@@ -13,6 +13,9 @@ class ContentRepository:
         return self.db.get(Content, item_id)
 
     def create(self, data: dict):
+        data = data.copy()
+        if "image" in data and not data.get("generated_image_url"):
+            data["generated_image_url"] = data.pop("image")
         item = Content(**data)
         self.db.add(item)
         self.db.commit()
@@ -31,6 +34,9 @@ class ContentRepository:
         item = self.get(item_id)
         if item is None:
             return None
+        data = data.copy()
+        if "image" in data and not data.get("generated_image_url"):
+            data["generated_image_url"] = data.pop("image")
         for key, value in data.items():
             if value is not None and hasattr(item, key):
                 setattr(item, key, value)

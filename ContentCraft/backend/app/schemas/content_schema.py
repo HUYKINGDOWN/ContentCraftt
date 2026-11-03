@@ -13,6 +13,8 @@ class ContentCreate(BaseModel):
     rule_id: int | None = None
     content_type: str = "Caption"
     language_preference: str = "VI"
+    image: str | None = None
+    generated_image_url: str | None = None
 
 
 class ContentUpdate(BaseModel):
@@ -26,6 +28,8 @@ class ContentUpdate(BaseModel):
     rule_id: int | None = None
     content_type: str | None = None
     language_preference: str | None = None
+    image: str | None = None
+    generated_image_url: str | None = None
 
 
 class ContentStatusUpdate(BaseModel):
@@ -44,6 +48,8 @@ class ContentRead(BaseModel):
     rule_id: int | None = None
     content_type: str = "Caption"
     language_preference: str = "VI"
+    image: str | None = None
+    generated_image_url: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

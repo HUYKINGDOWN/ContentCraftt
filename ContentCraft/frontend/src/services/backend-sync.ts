@@ -51,6 +51,18 @@ interface BackendContent {
   target_customer_id?: number | null
   content_type: string
   language_preference?: string
+  image?: string | null
+  generated_image_url?: string | null
+  created_at?: string
+}
+
+export interface BackendContentVersion {
+  id: number
+  content_id: number
+  version_number: number
+  body: string
+  edited_by_user_id: number
+  change_summary?: string | null
   created_at?: string
 }
 
@@ -280,26 +292,30 @@ export const backendSync = {
     try {
       const list = await apiRequest<BackendContent[]>('/contents')
       if (!Array.isArray(list)) return []
-      return list.map((c) => ({
-        id: String(c.id),
-        title: c.title,
-        body: c.body,
-        type: c.content_type || 'Social post',
-        channel: c.platform || 'Facebook',
-        brandId: c.brand_id ? String(c.brand_id) : '',
-        productId: c.product_id ? String(c.product_id) : '',
-        audienceId: c.target_customer_id ? String(c.target_customer_id) : '',
-        status:
-          c.status === 'Approved'
-            ? 'Approved'
-            : c.status === 'In review'
-              ? 'In review'
-              : 'Draft',
-        createdAt: c.created_at
-          ? new Date(c.created_at).toISOString().split('T')[0]
-          : new Date().toISOString().split('T')[0],
-        kind: 'text',
-      }))
+      return list.map((c) => {
+        const isVisual = Boolean(c.image || c.generated_image_url || c.content_type === 'Product visual')
+        return {
+          id: String(c.id),
+          title: c.title,
+          body: c.body,
+          type: c.content_type || (isVisual ? 'Product visual' : 'Social post'),
+          channel: c.platform || 'Facebook',
+          brandId: c.brand_id ? String(c.brand_id) : '',
+          productId: c.product_id ? String(c.product_id) : '',
+          audienceId: c.target_customer_id ? String(c.target_customer_id) : '',
+          status:
+            c.status === 'Approved'
+              ? 'Approved'
+              : c.status === 'In review'
+                ? 'In review'
+                : 'Draft',
+          createdAt: c.created_at
+            ? new Date(c.created_at).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0],
+          kind: isVisual ? 'image' : 'text',
+          image: c.image || c.generated_image_url || undefined,
+        }
+      })
     } catch (err) {
       console.warn('Could not fetch contents from backend:', err)
       return []
@@ -319,22 +335,45 @@ export const backendSync = {
         brand_id: isNaN(numericBrandId) ? 1 : numericBrandId,
         product_id: isNaN(numericProductId) ? null : numericProductId,
         target_customer_id: isNaN(numericAudienceId) ? null : numericAudienceId,
-        content_type: content.type || 'Social post',
+        content_type: content.type || (content.kind === 'image' ? 'Product visual' : 'Social post'),
+        image: content.image || null,
+        generated_image_url: content.image || null,
       }
+
+      let savedResult: Content | null = null
 
       if (isNumericId(content.id)) {
         const updated = await apiRequest<BackendContent>(`/contents/${content.id}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
         })
-        return { ...content, id: String(updated.id) }
+        savedResult = {
+          ...content,
+          id: String(updated.id),
+          image: updated.image || updated.generated_image_url || content.image,
+        }
       } else {
         const saved = await apiRequest<BackendContent>('/contents', {
           method: 'POST',
           body: JSON.stringify(payload),
         })
-        return { ...content, id: String(saved.id) }
+        savedResult = {
+          ...content,
+          id: String(saved.id),
+          image: saved.image || saved.generated_image_url || content.image,
+        }
       }
+
+      // Tự động ghi nhận một bản ghi Version vào ContentVersions trong SQL Server
+      if (savedResult && isNumericId(savedResult.id)) {
+        await this.saveContentVersion(
+          savedResult.id,
+          savedResult.body || savedResult.title,
+          `Phiên bản lưu (${savedResult.status}) - ${savedResult.kind === 'image' ? 'Visual' : 'Copy'}`
+        )
+      }
+
+      return savedResult
     } catch (err) {
       console.warn('Could not save content to backend:', err)
       return null
@@ -359,11 +398,12 @@ export const backendSync = {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       })
+      const isVisual = Boolean(updated.image || updated.generated_image_url || updated.content_type === 'Product visual')
       return {
         id: String(updated.id),
         title: updated.title,
         body: updated.body,
-        type: updated.content_type || 'Social post',
+        type: updated.content_type || (isVisual ? 'Product visual' : 'Social post'),
         channel: updated.platform || 'Facebook',
         brandId: updated.brand_id ? String(updated.brand_id) : '',
         productId: updated.product_id ? String(updated.product_id) : '',
@@ -372,7 +412,8 @@ export const backendSync = {
         createdAt: updated.created_at
           ? new Date(updated.created_at).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
-        kind: 'text',
+        kind: isVisual ? 'image' : 'text',
+        image: updated.image || updated.generated_image_url || undefined,
       }
     } catch (err) {
       console.warn(`Could not update content status for ${id}:`, err)
@@ -386,11 +427,12 @@ export const backendSync = {
       const updated = await apiRequest<BackendContent>(`/contents/${id}/approve`, {
         method: 'POST',
       })
+      const isVisual = Boolean(updated.image || updated.generated_image_url || updated.content_type === 'Product visual')
       return {
         id: String(updated.id),
         title: updated.title,
         body: updated.body,
-        type: updated.content_type || 'Social post',
+        type: updated.content_type || (isVisual ? 'Product visual' : 'Social post'),
         channel: updated.platform || 'Facebook',
         brandId: updated.brand_id ? String(updated.brand_id) : '',
         productId: updated.product_id ? String(updated.product_id) : '',
@@ -399,11 +441,47 @@ export const backendSync = {
         createdAt: updated.created_at
           ? new Date(updated.created_at).toISOString().split('T')[0]
           : new Date().toISOString().split('T')[0],
-        kind: 'text',
+        kind: isVisual ? 'image' : 'text',
+        image: updated.image || updated.generated_image_url || undefined,
       }
     } catch (err) {
       console.warn(`Could not approve content ${id}:`, err)
       return null
+    }
+  },
+
+  // ===================== CONTENT VERSIONS =====================
+  async saveContentVersion(
+    contentId: string | number,
+    body: string,
+    summary?: string
+  ): Promise<BackendContentVersion | null> {
+    const numericId = typeof contentId === 'string' ? parseInt(contentId, 10) : contentId
+    if (isNaN(numericId)) return null
+    try {
+      return await apiRequest<BackendContentVersion>('/content-versions', {
+        method: 'POST',
+        body: JSON.stringify({
+          content_id: numericId,
+          body,
+          change_summary: summary || 'Phiên bản lưu mới',
+        }),
+      })
+    } catch (err) {
+      console.warn('Could not save content version to backend:', err)
+      return null
+    }
+  },
+
+  async fetchContentVersions(contentId: string | number): Promise<BackendContentVersion[]> {
+    const numericId = typeof contentId === 'string' ? parseInt(contentId, 10) : contentId
+    if (isNaN(numericId)) return []
+    try {
+      const list = await apiRequest<BackendContentVersion[]>(`/content-versions?content_id=${numericId}`)
+      return Array.isArray(list) ? list : []
+    } catch (err) {
+      console.warn('Could not fetch content versions from backend:', err)
+      return []
     }
   },
 

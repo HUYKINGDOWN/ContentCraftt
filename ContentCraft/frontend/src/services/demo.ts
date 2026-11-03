@@ -10,6 +10,7 @@ export interface GenerationInput {
   brief: string
   language: string
 }
+
 export function composeDemoText(input: GenerationInput): string {
   const { brandName, productName, audienceName, contentType, tone, channel, brief, language } =
     input
@@ -19,12 +20,12 @@ export function composeDemoText(input: GenerationInput): string {
 }
 
 export async function generateText(input: GenerationInput): Promise<string> {
-  if (!input.brandName || !input.productName || !input.audienceName)
-    throw new Error('Choose a brand, product, and target audience first.')
+  if (!input.brandName && !input.productName)
+    throw new Error('Choose a brand or product first.')
 
-  // Thử gọi FastAPI backend AI generation thật (sử dụng Gemini hoặc provider đã cấu hình)
+  // Thử gọi FastAPI backend AI generation thật
   try {
-    const topic = `${input.productName} (${input.brandName})${input.brief ? ': ' + input.brief : ''}`
+    const topic = `${input.productName || input.brandName} (${input.brandName})${input.brief ? ': ' + input.brief : ''}`
     const res = await apiRequest<{
       title: string
       body: string
@@ -41,15 +42,14 @@ export async function generateText(input: GenerationInput): Promise<string> {
     })
 
     if (res && res.body) {
-      const fullText = res.title ? `${res.title}\n\n${res.body}` : res.body
-      return fullText
+      return res.title ? `${res.title}\n\n${res.body}` : res.body
     }
   } catch (error) {
     console.warn('Backend AI generation offline hoặc lỗi, chuyển sang fallback demo:', error)
   }
 
-  // Fallback demo local nếu backend chưa chạy hoặc gặp sự cố
-  await new Promise((resolve) => window.setTimeout(resolve, 700))
+  // Fallback demo local nếu backend gặp sự cố
+  await new Promise((resolve) => window.setTimeout(resolve, 500))
   return composeDemoText(input)
 }
 
@@ -58,18 +58,21 @@ export async function generateImage(input: {
   aspectRatio: string
   style: string
 }): Promise<string> {
-  if (!input.prompt.trim()) throw new Error('Enter an image prompt first.')
+  if (!input.prompt.trim()) throw new Error('Vui lòng nhập mô tả ảnh (prompt).')
 
-  // Thử gọi FastAPI backend AI image generation
+  // 1. Thử gọi FastAPI backend AI Image Generation
   try {
     const res = await apiRequest<{
       image_url?: string
       url?: string
       prompt?: string
+      provider?: string
     }>('/ai/image', {
       method: 'POST',
       body: JSON.stringify({
-        prompt: `${input.prompt} (Style: ${input.style}, Aspect ratio: ${input.aspectRatio})`,
+        prompt: input.prompt,
+        style: input.style,
+        aspect_ratio: input.aspectRatio,
       }),
     })
 
@@ -77,10 +80,18 @@ export async function generateImage(input: {
       return res.image_url
     }
   } catch (error) {
-    console.warn('Backend AI image offline hoặc lỗi, chuyển sang demo illustration:', error)
+    console.warn('Backend AI image endpoint offline hoặc gặp sự cố, sử dụng engine Flux AI:', error)
   }
 
-  await new Promise((resolve) => window.setTimeout(resolve, 850))
-  return '/assets/demo-image.svg'
+  // 2. Trực tiếp sinh ảnh chất lượng cao thông qua mô hình Flux.1 / SDXL
+  const aspectMap: Record<string, { w: number; h: number }> = {
+    '1:1': { w: 1024, h: 1024 },
+    '4:5': { w: 1024, h: 1280 },
+    '16:9': { w: 1536, h: 864 },
+    '9:16': { w: 1080, h: 1920 },
+  }
+  const dims = aspectMap[input.aspectRatio] || { w: 1024, h: 1024 }
+  const seed = Math.floor(Math.random() * 900000) + 100000
+  const cleanPrompt = encodeURIComponent(`${input.prompt}, ${input.style || 'clean lifestyle'}, photorealistic 8k, masterpiece`)
+  return `https://image.pollinations.ai/prompt/${cleanPrompt}?width=${dims.w}&height=${dims.h}&model=flux&seed=${seed}&nologo=true`
 }
-

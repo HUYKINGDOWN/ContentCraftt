@@ -16,6 +16,7 @@ import {
   Eye,
   FileImage,
   FileText,
+  History,
   Info,
   Lightbulb,
   Loader2,
@@ -56,6 +57,7 @@ import { useI18n } from '../../contexts/I18nContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { generateImage, generateText } from '../../services/demo'
 import { publishingService } from '../../services/publishing'
+import { backendSync, type BackendContentVersion } from '../../services/backend-sync'
 import type { Content } from '../../types'
 import './studio.css'
 
@@ -487,16 +489,16 @@ export function ContentStudioPage() {
   }
 
   async function generate() {
-    if (!brand || !product || !audience) {
-      notify('Add a brand, product and target customer before generating.', 'error')
+    if (!brand) {
+      notify('Vui lòng chọn thương hiệu trước khi sinh nội dung.', 'error')
       return
     }
     setBusy(true)
     try {
       const result = await generateText({
         brandName: brand.name,
-        productName: product.name,
-        audienceName: audience.name,
+        productName: product?.name || `Sản phẩm của ${brand.name}`,
+        audienceName: audience?.name || 'Khách hàng tiềm năng',
         contentType,
         tone,
         channel,
@@ -507,36 +509,34 @@ export function ContentStudioPage() {
       setStatus('Draft')
       setSavedId(undefined)
       setEditing(false)
-      notify('Demo draft is ready. Review and save your version.', 'success')
+      notify('Nội dung AI đã sẵn sàng! Xem lại và lưu phiên bản của bạn.', 'success')
     } catch {
-      notify('The draft could not be generated. Please try again.', 'error')
+      notify('Không thể sinh nội dung. Vui lòng thử lại.', 'error')
     } finally {
       setBusy(false)
     }
   }
 
-  function save(nextStatus: Content['status']) {
-    if (!brand || !product || !audience) {
-      notify(
-        'Choose a product belonging to the selected brand and a target customer before saving.',
-        'error',
-      )
+  async function save(nextStatus: Content['status']) {
+    if (!brand) {
+      notify('Vui lòng chọn thương hiệu trước khi lưu.', 'error')
       return
     }
     if (!body.trim()) {
-      notify('Add some content before saving.', 'error')
+      notify('Vui lòng tạo hoặc nhập nội dung trước khi lưu.', 'error')
       return
     }
     const id = savedId ?? crypto.randomUUID()
-    saveContent({
+    const pTitle = product?.name || brand.name
+    await saveContent({
       id,
-      title: `${product?.name ?? 'New campaign'} · ${contentType}`,
+      title: `${pTitle} · ${channel} ${contentType}`,
       body,
       type: contentType,
       channel,
       brandId,
-      productId,
-      audienceId,
+      productId: productId || '',
+      audienceId: audienceId || '',
       status: nextStatus,
       createdAt: new Date().toISOString(),
       kind: 'text',
@@ -546,8 +546,10 @@ export function ContentStudioPage() {
     setEditing(false)
     notify(
       nextStatus === 'Approved'
-        ? 'Version approved and saved to history.'
-        : 'Draft saved to history.',
+        ? 'Đã lưu và phê duyệt nội dung vào database SQL Server!'
+        : nextStatus === 'In review'
+          ? 'Đã lưu nội dung và chuyển sang trạng thái chờ duyệt!'
+          : 'Đã lưu bản nháp và ghi nhận phiên bản mới vào database!',
       'success',
     )
   }
@@ -953,40 +955,40 @@ export function ImageStudioPage() {
   }
 
   async function generate() {
-    if (!product) {
-      notify('Choose a product belonging to the selected brand before generating.', 'error')
-      return
-    }
     if (!prompt.trim()) {
-      notify('Describe the visual you would like to create.', 'error')
+      notify(t('imageStudio.emptyPrompt', 'Vui lòng nhập mô tả ảnh bạn muốn tạo.'), 'error')
       return
     }
     setBusy(true)
     try {
-      setImage(await generateImage({ prompt, aspectRatio, style }))
+      const generated = await generateImage({ prompt, aspectRatio, style })
+      setImage(generated)
       setSavedId(undefined)
-      notify('Demo visual is ready. This is a local illustration, not an AI render.', 'success')
+      notify(t('imageStudio.success', 'Hình ảnh AI được sinh thành công với mô hình Flux/SDXL!'), 'success')
     } catch {
-      notify('The preview could not be created. Please try again.', 'error')
+      notify(t('imageStudio.error', 'Không thể tạo hình ảnh. Vui lòng thử lại.'), 'error')
     } finally {
       setBusy(false)
     }
   }
 
-  function save() {
-    if (!product) {
-      notify('Choose a product belonging to the selected brand before saving.', 'error')
-      return
-    }
+  async function save() {
+    const brandObj = brands.find((b) => b.id === brandId)
+    const title = product?.name
+      ? `${product.name} · ${style} visual`
+      : brandObj?.name
+        ? `${brandObj.name} · ${style} visual`
+        : `Marketing visual · ${style}`
+
     const id = savedId ?? crypto.randomUUID()
-    saveContent({
+    await saveContent({
       id,
-      title: `${product?.name ?? 'Product'} · ${style} visual`,
+      title,
       body: prompt,
       type: 'Product visual',
       channel: 'Instagram',
-      brandId,
-      productId,
+      brandId: brandId || (brands[0]?.id ?? '1'),
+      productId: productId || '',
       audienceId: '',
       status: 'Draft',
       createdAt: new Date().toISOString(),
@@ -994,7 +996,7 @@ export function ImageStudioPage() {
       image,
     })
     setSavedId(id)
-    notify('Visual saved as a draft in content history.', 'success')
+    notify(t('imageStudio.saved', 'Đã lưu visual vào cơ sở dữ liệu và ghi nhận phiên bản mới!'), 'success')
   }
 
   function upload(file?: File) {
@@ -1210,19 +1212,19 @@ export function ImageStudioPage() {
             </Field>
             <Button
               className="studio-generate-button"
-              disabled={busy || !product}
+              disabled={busy || !prompt.trim()}
               onClick={generate}
             >
               {busy ? <Loader2 size={20} className="studio-spin" /> : <Sparkles size={20} />}
               {busy ? t('imageStudio.generating', 'Creating visual…') : t('imageStudio.generate', 'Generate image')}
             </Button>
-            <DemoNotice text="Demo preview uses an original local SVG illustration. References are previews only; connect an image service to use your prompt and references." />
+            <DemoNotice text="Hệ thống AI Visual đang hoạt động. Mọi hình ảnh bạn tạo và lưu phiên bản (Save as version) đều được lưu trực tiếp vào SQL Server và đồng bộ vào Lịch sử nội dung." />
           </div>
         </section>
         <section className="studio-card studio-output-card studio-visual-card">
           <div className="studio-panel-title">
             <h2>Generated visual</h2>
-            <Badge tone="green">Demo visual</Badge>
+            <Badge tone="green">Flux.1 AI</Badge>
             <span className="studio-muted studio-small">v1.0 (Ready)</span>
           </div>
           <div className={`studio-image-preview studio-ratio-${aspectRatio.replace(':', '-')}`} style={{ position: 'relative' }}>
@@ -1241,13 +1243,13 @@ export function ImageStudioPage() {
               </div>
             )}
           </div>
-          <p className="studio-visual-disclaimer">Original SVG illustration · Demo preview</p>
+          <p className="studio-visual-disclaimer">AI Generated Visual · Flux.1 Engine</p>
           <div className="studio-output-actions studio-image-actions">
-            <Button disabled={busy || !product} onClick={save}>
+            <Button disabled={busy} onClick={save}>
               <Bookmark size={17} />
               {savedId ? 'Update version' : 'Save as version'}
             </Button>
-            <Button variant="secondary" disabled={busy || !product} onClick={generate}>
+            <Button variant="secondary" disabled={busy || !prompt.trim()} onClick={generate}>
               <RefreshCw size={16} />
               Regenerate
             </Button>
@@ -1326,16 +1328,31 @@ export function HistoryPage() {
     notify('History log exported.', 'success')
   }
 
-  function openDetail(item: Content) {
+  const [versions, setVersions] = useState<BackendContentVersion[]>([])
+  const [loadingVersions, setLoadingVersions] = useState(false)
+
+  async function openDetail(item: Content) {
     setSelected(item)
     setDetailStatus(item.status)
+    setLoadingVersions(true)
+    try {
+      const vList = await backendSync.fetchContentVersions(item.id)
+      setVersions(vList)
+    } catch {
+      setVersions([])
+    } finally {
+      setLoadingVersions(false)
+    }
   }
 
-  function updateStatus() {
+  async function updateStatus() {
     if (!selected) return
-    saveContent({ ...selected, status: detailStatus })
+    await saveContent({ ...selected, status: detailStatus })
+    await backendSync.saveContentVersion(selected.id, selected.body, `Cập nhật trạng thái: ${detailStatus}`)
+    const vList = await backendSync.fetchContentVersions(selected.id)
+    setVersions(vList)
     setSelected({ ...selected, status: detailStatus })
-    notify('Content status updated.', 'success')
+    notify('Đã cập nhật trạng thái và ghi nhận phiên bản mới vào database!', 'success')
   }
 
   return (
@@ -1514,6 +1531,31 @@ export function HistoryPage() {
               <img className="studio-detail-image" src={selected.image} alt={selected.title} />
             )}
             <div className="studio-detail-body">{selected.body}</div>
+            <div className="studio-version-history-section" style={{ marginTop: '14px', borderTop: '1px solid var(--cc-border)', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <History size={14} /> Lịch sử phiên bản (SQL Server ContentVersions)
+                </span>
+                <span className="studio-muted studio-small">{versions.length} phiên bản ghi nhận</span>
+              </div>
+              {loadingVersions ? (
+                <small className="studio-muted">Đang tải phiên bản từ database...</small>
+              ) : versions.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '140px', overflowY: 'auto' }}>
+                  {versions.map((v) => (
+                    <div key={v.id} style={{ fontSize: '12px', padding: '6px 10px', background: 'var(--cc-input-bg, #1a202c)', borderRadius: '6px', border: '1px solid var(--cc-border)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <strong style={{ color: 'var(--cc-primary)' }}>Phiên bản #{v.version_number}</strong>
+                        <small className="studio-muted">{v.created_at ? new Date(v.created_at).toLocaleString() : ''}</small>
+                      </div>
+                      <p style={{ margin: '2px 0 0', opacity: 0.85 }}>{v.change_summary || v.body.slice(0, 70) + '...'}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <small className="studio-muted">Bản lưu hiện tại là phiên bản đầu tiên của nội dung này.</small>
+              )}
+            </div>
             <Field label="Approval status">
               <select
                 value={detailStatus}

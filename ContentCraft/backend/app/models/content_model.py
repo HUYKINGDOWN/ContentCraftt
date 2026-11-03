@@ -91,6 +91,8 @@ class Content(Base):
             kwargs["prompt_used"] = kwargs.get("title")
         if not kwargs.get("generated_text") and kwargs.get("body"):
             kwargs["generated_text"] = kwargs.get("body")
+        if not kwargs.get("generated_image_url") and kwargs.get("image"):
+            kwargs["generated_image_url"] = kwargs.get("image")
         super().__init__(**kwargs)
 
     @property
@@ -120,3 +122,11 @@ class Content(Base):
     @platform.setter
     def platform(self, value: str):
         self.target_platform = value
+
+    @property
+    def image(self) -> str | None:
+        return self.generated_image_url
+
+    @image.setter
+    def image(self, value: str | None):
+        self.generated_image_url = value
