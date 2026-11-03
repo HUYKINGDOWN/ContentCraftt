@@ -214,26 +214,26 @@ export function DashboardPage() {
     session?.role === 'Admin' ||
     (!session?.role && session?.email?.toLowerCase().includes('admin'))
 
-  const recent = contents.slice(0, 6)
+  const recent = contents.slice(0, 4)
   const approvedCount = contents.filter((c) => c.status === 'Approved').length
   const draftsCount = contents.length - approvedCount
 
   // Admin Automation Handlers
   const handleCleanCache = () => {
-    notify('⚡ Đã kích hoạt dọn dẹp và tối ưu hóa bộ nhớ đệm AI (Đã giải phóng 18.5 MB cache hình ảnh).')
+    notify('⚡ Đã tự động dọn dẹp và tối ưu hóa bộ nhớ đệm AI (Giải phóng 18.5 MB cache).')
   }
 
   const handleSyncDb = async () => {
     try {
       await refreshFromBackend()
-      notify('🔄 Đã đồng bộ toàn bộ bảng dữ liệu Users, Brands, Products, Contents với SQL Server.')
+      notify('🔄 Đã đồng bộ toàn bộ cơ sở dữ liệu với Microsoft SQL Server.')
     } catch {
       notify('Lỗi khi đồng bộ SQL Server.', 'error')
     }
   }
 
   const handleScanSecurity = () => {
-    notify('🛡️ Hệ thống phân quyền RBAC hoạt động bình thường. Tất cả tài khoản bảo mật.')
+    notify('🛡️ Hệ thống phân quyền RBAC an toàn. Không có rủi ro bảo mật.')
   }
 
   const handleQuickApprove = async (content: Content) => {
@@ -241,7 +241,7 @@ export function DashboardPage() {
       await saveContent({ ...content, status: 'Approved' })
       notify(`Đã phê duyệt ấn phẩm: "${content.title}"`)
     } catch {
-      notify('Lỗi khi phê duyệt ấn phẩm.', 'error')
+      notify('Lỗi khi cập nhật.', 'error')
     }
   }
 
@@ -250,202 +250,165 @@ export function DashboardPage() {
       await saveContent({ ...content, status: 'In review' })
       notify(`Đã chuyển ấn phẩm sang trạng thái Cần xem xét: "${content.title}"`)
     } catch {
-      notify('Lỗi khi cập nhật trạng thái.', 'error')
+      notify('Lỗi khi cập nhật.', 'error')
     }
   }
 
   /* ==========================================================================
-     1. GIAO DIỆN DÀNH RIÊNG CHO QUẢN TRỊ VIÊN (ADMIN COMMAND CENTER)
+     1. GIAO DIỆN QUẢN TRỊ VIÊN (ADMIN COMMAND & AUTOMATION CENTER)
      ========================================================================== */
   if (isAdmin) {
     return (
-      <div className="studio-page studio-overview">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+      <div className="studio-page studio-overview" style={{ width: '100%', maxWidth: '100%' }}>
+        {/* Compact Admin Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '999px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', fontSize: '13px', fontWeight: 750, marginBottom: '8px' }}>
-              <ShieldCheck size={16} /> TRUNG TÂM CHỈ HUY QUẢN TRỊ VIÊN
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 10px', borderRadius: '999px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', fontSize: '11.5px', fontWeight: 750 }}>
+              <ShieldCheck size={14} /> TRUNG TÂM CHỈ HUY QUẢN TRỊ
             </div>
-            <h1 style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0', color: 'var(--ink)' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0', color: 'var(--ink)' }}>
               Trung tâm Chỉ huy &amp; Tự động hóa Hệ thống
             </h1>
-            <p style={{ color: 'var(--muted)', fontSize: '15px' }}>
-              Giám sát hạ tầng kỹ thuật SQL Server, tự động hóa dọn cache AI, quản lý người dùng và kiểm duyệt ấn phẩm toàn hệ thống.
-            </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <Button variant="secondary" onClick={() => navigate('/dashboard/admin')} style={{ fontWeight: 700 }}>
-              <ShieldCheck size={17} /> Mở Trang Quản Trị Hệ Thống
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <Button onClick={handleCleanCache} style={{ background: '#059669', fontSize: '13px', padding: '8px 14px', fontWeight: 700 }}>
+              ⚡ Dọn Cache AI
+            </Button>
+            <Button variant="secondary" onClick={handleSyncDb} style={{ fontSize: '13px', padding: '8px 14px', fontWeight: 700 }}>
+              🔄 Sync SQL Server
+            </Button>
+            <Button variant="secondary" onClick={() => navigate('/dashboard/admin')} style={{ fontSize: '13px', padding: '8px 14px', fontWeight: 700 }}>
+              <ShieldCheck size={15} /> Quản trị Thành viên
             </Button>
           </div>
         </div>
 
-        {/* BẢNG TỰ ĐỘNG HÓA HỆ THỐNG 1-CLICK CHO ADMIN */}
-        <div className="studio-card" style={{ marginBottom: '28px', padding: '22px 26px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.4) 100%)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '16px' }}>
-            <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Zap size={20} style={{ color: '#10b981' }} />
-                Bộ Công Cụ Tự Động Hóa 1-Click (System Automation Hub)
-              </h2>
-              <p style={{ color: 'var(--muted)', fontSize: '14px', margin: '4px 0 0' }}>
-                Kích hoạt các tác vụ bảo trì, đồng bộ và tối ưu hóa hệ thống máy chủ tức thời.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-              <Button onClick={handleCleanCache} style={{ background: '#059669', fontSize: '13.5px', fontWeight: 700 }}>
-                ⚡ Tự động Dọn Cache AI
-              </Button>
-              <Button variant="secondary" onClick={handleSyncDb} style={{ fontSize: '13.5px', fontWeight: 700 }}>
-                🔄 Đồng bộ SQL Server
-              </Button>
-              <Button variant="secondary" onClick={handleScanSecurity} style={{ fontSize: '13.5px', fontWeight: 700 }}>
-                🛡️ Quét Bảo Mật RBAC
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* TRẠNG THÁI HẠ TẦNG KỸ THUẬT CHO ADMIN */}
-        <div className="dashboard-status-banner" style={{ marginBottom: '28px', padding: '16px 20px', borderRadius: '16px' }}>
-          <div className="status-banner-item">
+        {/* Compact System Health Bar */}
+        <div className="dashboard-status-banner" style={{ marginBottom: '14px', padding: '10px 16px', borderRadius: '12px' }}>
+          <div className="status-banner-item" style={{ fontSize: '13px' }}>
             <span className="status-live-dot" />
             <span className="status-label">SQL Server:</span>
-            <strong>localhost\SQLEXPRESS (ContentCraftDB · 8ms)</strong>
+            <strong>SQLEXPRESS (ContentCraftDB · 8ms)</strong>
           </div>
-          <div className="status-banner-item">
+          <div className="status-banner-item" style={{ fontSize: '13px' }}>
             <span className="status-live-dot" />
-            <span className="status-label">FastAPI Backend:</span>
-            <strong>Port 8000 (Uptime: 99.98%)</strong>
+            <span className="status-label">FastAPI:</span>
+            <strong>Port 8000 (Live)</strong>
           </div>
-          <div className="status-banner-item">
+          <div className="status-banner-item" style={{ fontSize: '13px' }}>
             <span className="status-live-dot" />
-            <span className="status-label">Flux.1 AI Image Engine:</span>
-            <strong>Engine Sẵn sàng (Pollinations 4K)</strong>
+            <span className="status-label">Flux.1 Engine:</span>
+            <strong>Active 4K</strong>
           </div>
-          <div className="status-banner-item">
+          <div className="status-banner-item" style={{ fontSize: '13px' }}>
             <span className="status-live-dot" />
-            <span className="status-label">Gemini AI Model:</span>
-            <strong>Gemini 3.5 Flash Active</strong>
+            <span className="status-label">Gemini AI:</span>
+            <strong>3.5 Flash</strong>
           </div>
         </div>
 
-        {/* THỐNG KÊ TOÀN DIỆN HỆ THỐNG */}
-        <StaggerContainer className="studio-metrics-grid" style={{ marginBottom: '28px' }}>
-          <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/admin')}>
-            <div className="studio-metric-label">
-              <span><Users size={16} /></span>
-              Quản Trị Thành Viên (RBAC)
+        {/* Compact Admin Metrics Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+          <div className="studio-card" style={{ padding: '14px 18px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/admin')}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12.5px', fontWeight: 600 }}>
+              <span>Quản trị Thành viên</span>
+              <Users size={16} style={{ color: '#10b981' }} />
             </div>
-            <div className="studio-metric-value">
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
               <AnimatedNumber value={users.length || 3} />
-              <small>người dùng active</small>
             </div>
-            <div className="studio-metric-change">
-              <ShieldCheck size={13} />
-              <span>Phân quyền Admin &amp; User</span>
+            <div style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ShieldCheck size={12} /> RBAC Admin &amp; Staff
             </div>
-          </MotionCard>
+          </div>
 
-          <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
-            <div className="studio-metric-label">
-              <span><Building2 size={16} /></span>
-              Tổng Thương Hiệu (Brands)
+          <div className="studio-card" style={{ padding: '14px 18px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12.5px', fontWeight: 600 }}>
+              <span>Thương hiệu Hệ thống</span>
+              <Building2 size={16} style={{ color: '#38bdf8' }} />
             </div>
-            <div className="studio-metric-value">
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
               <AnimatedNumber value={brands.length} />
-              <small>doanh nghiệp</small>
             </div>
-            <div className="studio-metric-change">
-              <TrendingUp size={13} />
-              <span>Đang quản lý hệ thống</span>
+            <div style={{ fontSize: '12px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <TrendingUp size={12} /> Hoạt động chiến dịch
             </div>
-          </MotionCard>
+          </div>
 
-          <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
-            <div className="studio-metric-label">
-              <span><Package size={16} /></span>
-              Danh Mục Sản Phẩm (Products)
+          <div className="studio-card" style={{ padding: '14px 18px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12.5px', fontWeight: 600 }}>
+              <span>Danh mục Sản phẩm</span>
+              <Package size={16} style={{ color: '#a855f7' }} />
             </div>
-            <div className="studio-metric-value">
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
               <AnimatedNumber value={products.length} />
-              <small>mặt hàng</small>
             </div>
-            <div className="studio-metric-change">
-              <TrendingUp size={13} />
-              <span>Đã lưu vào SQL Server</span>
+            <div style={{ fontSize: '12px', color: '#a855f7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <TrendingUp size={12} /> Đã lưu vào SQL Server
             </div>
-          </MotionCard>
+          </div>
 
-          <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
-            <div className="studio-metric-label">
-              <span><Sparkles size={16} /></span>
-              Kho Nội Dung Toàn Hệ Thống
+          <div className="studio-card" style={{ padding: '14px 18px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12.5px', fontWeight: 600 }}>
+              <span>Ấn phẩm Toàn Hệ Thống</span>
+              <Sparkles size={16} style={{ color: '#f59e0b' }} />
             </div>
-            <div className="studio-metric-value">
+            <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--ink)', margin: '4px 0' }}>
               <AnimatedNumber value={contents.length} />
-              <small>{approvedCount} đã duyệt</small>
             </div>
-            <div className="studio-metric-change">
-              <TrendingUp size={13} />
-              <span>{draftsCount} bản thảo chờ duyệt</span>
+            <div style={{ fontSize: '12px', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={12} /> {approvedCount} đã duyệt • {draftsCount} chờ
             </div>
-          </MotionCard>
-        </StaggerContainer>
+          </div>
+        </div>
 
-        {/* HÀNG ĐỢI KIỂM DUYỆT BÀI VIẾT TOÀN HỆ THỐNG CHO ADMIN */}
-        <div className="studio-card" style={{ marginBottom: '28px', padding: '24px 28px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
-            <div>
-              <h2 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={19} style={{ color: '#10b981' }} />
-                Bảng Kiểm Duyệt Nội Dung Toàn Hệ Thống (Content Moderation Queue)
-              </h2>
-              <p style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '4px' }}>
-                Admin có quyền duyệt xuất bản ngay hoặc yêu cầu chỉnh sửa các bài viết do Creator tạo ra.
-              </p>
-            </div>
-            <Button variant="secondary" onClick={() => navigate('/dashboard/history')}>
-              Xem toàn bộ kho nội dung <ArrowRight size={15} />
+        {/* Compact Moderation Queue */}
+        <div className="studio-card" style={{ padding: '16px 20px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+            <h2 style={{ fontSize: '16.5px', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <CheckCircle2 size={18} style={{ color: '#10b981' }} />
+              Bảng Kiểm Duyệt Nội Dung Toàn Hệ Thống
+            </h2>
+            <Button variant="secondary" onClick={() => navigate('/dashboard/history')} style={{ fontSize: '12.5px', padding: '6px 12px' }}>
+              Xem tất cả kho ấn phẩm →
             </Button>
           </div>
 
-          <div className="studio-recent-list">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {recent.map((item) => (
               <div
                 key={item.id}
-                className="studio-recent-row"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 16px' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px', border: '1px solid var(--line)' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                  <span className="studio-round-icon">
-                    {item.kind === 'image' ? <FileImage size={19} /> : <FileText size={19} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                  <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                    {item.kind === 'image' ? <FileImage size={16} /> : <FileText size={16} />}
                   </span>
                   <div style={{ minWidth: 0 }}>
-                    <strong style={{ fontSize: '15px', color: 'var(--ink)', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    <strong style={{ fontSize: '14px', color: 'var(--ink)', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                       {item.title}
                     </strong>
-                    <small style={{ color: 'var(--muted)', fontSize: '13px' }}>
+                    <small style={{ color: 'var(--muted)', fontSize: '12px' }}>
                       {item.type} • {item.channel}
                     </small>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   <ContentStatus status={item.status} />
-                  {item.status !== 'Approved' && (
+                  {item.status !== 'Approved' ? (
                     <button
                       type="button"
-                      style={{ fontSize: '12px', padding: '5px 10px', borderRadius: '8px', border: '1px solid #10b981', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ fontSize: '11.5px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #10b981', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontWeight: 700, cursor: 'pointer' }}
                       onClick={() => handleQuickApprove(item)}
                     >
                       Duyệt ngay
                     </button>
-                  )}
-                  {item.status === 'Approved' && (
+                  ) : (
                     <button
                       type="button"
-                      style={{ fontSize: '12px', padding: '5px 10px', borderRadius: '8px', border: '1px solid #f59e0b', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700, cursor: 'pointer' }}
+                      style={{ fontSize: '11.5px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #f59e0b', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700, cursor: 'pointer' }}
                       onClick={() => handleQuickReview(item)}
                     >
                       Yêu cầu sửa
@@ -461,204 +424,171 @@ export function DashboardPage() {
   }
 
   /* ==========================================================================
-     2. GIAO DIỆN DÀNH RIÊNG CHO NGƯỜI DÙNG SÁNG TẠO (CREATOR WORKSPACE)
+     2. GIAO DIỆN NGƯỜI SÁNG TẠO (CREATOR WORKSPACE)
      ========================================================================== */
   return (
-    <div className="studio-page studio-overview">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+    <div className="studio-page studio-overview" style={{ width: '100%', maxWidth: '100%' }}>
+      {/* Compact Creator Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '999px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', fontSize: '13px', fontWeight: 750, marginBottom: '8px' }}>
-            <Sparkles size={16} /> BÀN LÀM VIỆC SÁNG TẠO NỘI DUNG (CREATOR WORKSPACE)
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 10px', borderRadius: '999px', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', fontSize: '11.5px', fontWeight: 750 }}>
+            <Sparkles size={14} /> KHÔNG GIAN SÁNG TẠO NỘI DUNG
           </div>
-          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: '4px 0', color: 'var(--ink)' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0', color: 'var(--ink)' }}>
             Chào mừng bạn đến với Studio Sáng tạo
           </h1>
-          <p style={{ color: 'var(--muted)', fontSize: '15px' }}>
-            Quy trình làm việc 4 bước giúp bạn tạo bài viết đa kênh SEO/Social và sinh ảnh sản phẩm 4K nhanh gấp 10 lần.
-          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <Button onClick={() => navigate('/dashboard/content-studio')} style={{ fontWeight: 700 }}>
-            <Sparkles size={17} /> Sinh bài viết mới
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <Button onClick={() => navigate('/dashboard/content-studio')} style={{ fontSize: '13px', padding: '8px 16px', fontWeight: 700 }}>
+            <Sparkles size={16} /> Sinh bài viết mới
           </Button>
-          <Button variant="secondary" onClick={() => navigate('/dashboard/image-studio')} style={{ fontWeight: 700 }}>
-            <FileImage size={17} /> Tạo ảnh AI 4K
+          <Button variant="secondary" onClick={() => navigate('/dashboard/image-studio')} style={{ fontSize: '13px', padding: '8px 16px', fontWeight: 700 }}>
+            <FileImage size={16} /> Tạo ảnh AI 4K
           </Button>
         </div>
       </div>
 
-      {/* QUY TRÌNH 4 BƯỚC THÔNG MINH CHO CREATOR */}
-      <div className="studio-card" style={{ marginBottom: '28px', padding: '24px 28px' }}>
-        <h2 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
-          🚀 Quy trình Sáng tạo 4 Bước Thông minh (Guided Creator Pipeline)
-        </h2>
-        <p style={{ color: 'var(--muted)', fontSize: '14.5px', marginBottom: '20px' }}>
-          Thực hiện tuần tự theo quy trình dưới đây để có những ấn phẩm tiếp thị chất lượng cao nhất:
-        </p>
+      {/* Compact 4-Step Pipeline */}
+      <div className="studio-card" style={{ padding: '16px 20px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '16.5px', fontWeight: 800, color: 'var(--ink)', margin: 0 }}>
+            🚀 Quy trình Sáng tạo 4 Bước Thông minh
+          </h2>
+          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Thực hiện tuần tự để có ấn phẩm hoàn hảo</span>
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-          <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--line)', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ display: 'inline-flex', padding: '6px 10px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '12px', fontWeight: 800, marginBottom: '10px' }}>
-                BƯỚC 1: THƯƠNG HIỆU
-              </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ink)', marginBottom: '6px' }}>Hồ sơ Thương hiệu</h3>
-              <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5 }}>
-                Định vị tone giọng và phong cách viết. Đang có {brands.length} thương hiệu.
-              </p>
+              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '11px', fontWeight: 800, marginBottom: '6px' }}>
+                BƯỚC 1: BRAND
+              </span>
+              <h3 style={{ fontSize: '14.5px', fontWeight: 750, color: 'var(--ink)', margin: '0 0 4px' }}>Hồ sơ Thương hiệu</h3>
+              <p style={{ color: 'var(--muted)', fontSize: '12px', margin: 0 }}>Đang có {brands.length} brand active</p>
             </div>
-            <Button variant="secondary" onClick={() => navigate('/dashboard/brands')} style={{ marginTop: '14px', fontSize: '13px' }}>
-              Quản lý Brand →
+            <Button variant="secondary" onClick={() => navigate('/dashboard/brands')} style={{ marginTop: '10px', fontSize: '12px', padding: '5px 10px' }}>
+              Chọn Brand →
             </Button>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--line)', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ display: 'inline-flex', padding: '6px 10px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontSize: '12px', fontWeight: 800, marginBottom: '10px' }}>
-                BƯỚC 2: SẢN PHẨM
-              </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ink)', marginBottom: '6px' }}>Sản phẩm Quảng bá</h3>
-              <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5 }}>
-                Thêm sản phẩm cần tiếp thị. Đang có {products.length} sản phẩm trong kho.
-              </p>
+              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontSize: '11px', fontWeight: 800, marginBottom: '6px' }}>
+                BƯỚC 2: PRODUCT
+              </span>
+              <h3 style={{ fontSize: '14.5px', fontWeight: 750, color: 'var(--ink)', margin: '0 0 4px' }}>Sản phẩm Tiếp thị</h3>
+              <p style={{ color: 'var(--muted)', fontSize: '12px', margin: 0 }}>Đang có {products.length} sản phẩm catalog</p>
             </div>
-            <Button variant="secondary" onClick={() => navigate('/dashboard/products')} style={{ marginTop: '14px', fontSize: '13px' }}>
-              Xem Sản phẩm →
+            <Button variant="secondary" onClick={() => navigate('/dashboard/products')} style={{ marginTop: '10px', fontSize: '12px', padding: '5px 10px' }}>
+              Chọn Sản phẩm →
             </Button>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--line)', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ display: 'inline-flex', padding: '6px 10px', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', fontSize: '12px', fontWeight: 800, marginBottom: '10px' }}>
-                BƯỚC 3: AI CONTENT
-              </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ink)', marginBottom: '6px' }}>Sinh bài viết AI</h3>
-              <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5 }}>
-                Sáng tạo bài viết chuẩn SEO, Facebook, Instagram bằng Gemini AI.
-              </p>
+              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', fontSize: '11px', fontWeight: 800, marginBottom: '6px' }}>
+                BƯỚC 3: AI WRITER
+              </span>
+              <h3 style={{ fontSize: '14.5px', fontWeight: 750, color: 'var(--ink)', margin: '0 0 4px' }}>Sinh bài viết AI</h3>
+              <p style={{ color: 'var(--muted)', fontSize: '12px', margin: 0 }}>Đa kênh SEO, Facebook, Instagram</p>
             </div>
-            <Button onClick={() => navigate('/dashboard/content-studio')} style={{ marginTop: '14px', fontSize: '13px' }}>
+            <Button onClick={() => navigate('/dashboard/content-studio')} style={{ marginTop: '10px', fontSize: '12px', padding: '5px 10px' }}>
               Viết bài ngay →
             </Button>
           </div>
 
-          <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--line)', borderRadius: '16px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--line)', borderRadius: '12px', padding: '12px 14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ display: 'inline-flex', padding: '6px 10px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', fontSize: '12px', fontWeight: 800, marginBottom: '10px' }}>
+              <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '6px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', fontSize: '11px', fontWeight: 800, marginBottom: '6px' }}>
                 BƯỚC 4: AI IMAGE
-              </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 750, color: 'var(--ink)', marginBottom: '6px' }}>Tạo hình ảnh 4K</h3>
-              <p style={{ color: 'var(--muted)', fontSize: '13.5px', lineHeight: 1.5 }}>
-                Sinh ảnh thương mại chân thực với Flux.1 AI Image Engine &amp; lưu phiên bản.
-              </p>
+              </span>
+              <h3 style={{ fontSize: '14.5px', fontWeight: 750, color: 'var(--ink)', margin: '0 0 4px' }}>Tạo hình ảnh 4K</h3>
+              <p style={{ color: 'var(--muted)', fontSize: '12px', margin: 0 }}>Flux.1 AI Engine thương mại</p>
             </div>
-            <Button onClick={() => navigate('/dashboard/image-studio')} style={{ marginTop: '14px', fontSize: '13px' }}>
+            <Button onClick={() => navigate('/dashboard/image-studio')} style={{ marginTop: '10px', fontSize: '12px', padding: '5px 10px' }}>
               Tạo ảnh AI →
             </Button>
           </div>
         </div>
       </div>
 
-      {/* THỐNG KÊ CỦA CREATOR */}
-      <StaggerContainer className="studio-metrics-grid" style={{ marginBottom: '28px' }}>
-        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
-          <div className="studio-metric-label">
-            <span><Building2 size={16} /></span>
-            Thương Hiệu Đang Dùng
+      {/* Compact Metrics Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '14px' }}>
+        <div className="studio-card" style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/brands')}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12px' }}>
+            <span>Brand Đang Dùng</span>
+            <Building2 size={15} style={{ color: '#10b981' }} />
           </div>
-          <div className="studio-metric-value">
+          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '2px 0' }}>
             <AnimatedNumber value={brands.length} />
-            <small>active brands</small>
           </div>
-          <div className="studio-metric-change">
-            <TrendingUp size={13} />
-            <span>Sẵn sàng cho chiến dịch</span>
-          </div>
-        </MotionCard>
+        </div>
 
-        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
-          <div className="studio-metric-label">
-            <span><Package size={16} /></span>
-            Sản Phẩm Tiếp Thị
+        <div className="studio-card" style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/products')}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12px' }}>
+            <span>Sản Phẩm Tiếp Thị</span>
+            <Package size={15} style={{ color: '#38bdf8' }} />
           </div>
-          <div className="studio-metric-value">
+          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '2px 0' }}>
             <AnimatedNumber value={products.length} />
-            <small>mặt hàng</small>
           </div>
-          <div className="studio-metric-change">
-            <TrendingUp size={13} />
-            <span>Dữ liệu sản phẩm thực tế</span>
-          </div>
-        </MotionCard>
+        </div>
 
-        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
-          <div className="studio-metric-label">
-            <span><Sparkles size={16} /></span>
-            Ấn Phẩm Đã Sáng Tạo
+        <div className="studio-card" style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/history')}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12px' }}>
+            <span>Ấn Phẩm Của Bạn</span>
+            <Sparkles size={15} style={{ color: '#a855f7' }} />
           </div>
-          <div className="studio-metric-value">
+          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '2px 0' }}>
             <AnimatedNumber value={contents.length} />
-            <small>{approvedCount} đã duyệt</small>
           </div>
-          <div className="studio-metric-change">
-            <TrendingUp size={13} />
-            <span>{draftsCount} bản thảo đang lưu</span>
-          </div>
-        </MotionCard>
+        </div>
 
-        <MotionCard className="studio-card studio-metric-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/dashboard/audiences')}>
-          <div className="studio-metric-label">
-            <span><Users size={16} /></span>
-            Đối Tượng Khách Hàng
+        <div className="studio-card" style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={() => navigate('/dashboard/audiences')}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--muted)', fontSize: '12px' }}>
+            <span>Tệp Khách Hàng</span>
+            <Users size={15} style={{ color: '#f59e0b' }} />
           </div>
-          <div className="studio-metric-value">
+          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--ink)', margin: '2px 0' }}>
             <AnimatedNumber value={audiences.length} />
-            <small>tệp mục tiêu</small>
           </div>
-          <div className="studio-metric-change">
-            <TrendingUp size={13} />
-            <span>Persona khách hàng</span>
-          </div>
-        </MotionCard>
-      </StaggerContainer>
+        </div>
+      </div>
 
-      {/* KHO ẤN PHẨM MỚI NHẤT CỦA BẠN */}
-      <div className="studio-card" style={{ marginBottom: '28px', padding: '24px 28px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
-          <div>
-            <h2 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={19} style={{ color: '#10b981' }} />
-              Ấn Phẩm Gần Đây Của Bạn (Recent Creations)
-            </h2>
-            <p style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '4px' }}>
-              Xem lại các bản thảo bài viết và hình ảnh AI bạn đã tạo gần đây.
-            </p>
-          </div>
-          <Button variant="secondary" onClick={() => navigate('/dashboard/history')}>
-            Xem tất cả kho ấn phẩm <ArrowRight size={15} />
+      {/* Compact Recent Drafts */}
+      <div className="studio-card" style={{ padding: '16px 20px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '16.5px', fontWeight: 800, color: 'var(--ink)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            <FileText size={18} style={{ color: '#10b981' }} />
+            Ấn Phẩm Gần Đây Của Bạn
+          </h2>
+          <Button variant="secondary" onClick={() => navigate('/dashboard/history')} style={{ fontSize: '12px', padding: '5px 12px' }}>
+            Xem tất cả kho ấn phẩm →
           </Button>
         </div>
 
-        <div className="studio-recent-list">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {recent.map((item) => (
             <button
               key={item.id}
-              className="studio-recent-row"
               onClick={() => navigate(`/dashboard/history?item=${item.id}`)}
-              style={{ width: '100%', textAlign: 'left' }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '10px', border: '1px solid var(--line)', width: '100%', textAlign: 'left', cursor: 'pointer' }}
             >
-              <span className="studio-round-icon">
-                {item.kind === 'image' ? <FileImage size={19} /> : <FileText size={19} />}
-              </span>
-              <span className="studio-recent-info">
-                <strong style={{ fontSize: '15px' }}>{item.title}</strong>
-                <small style={{ fontSize: '13px' }}>
-                  {item.type} <span>•</span> {item.channel}
-                </small>
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+                <span style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                  {item.kind === 'image' ? <FileImage size={16} /> : <FileText size={16} />}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <strong style={{ fontSize: '14px', color: 'var(--ink)', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {item.title}
+                  </strong>
+                  <small style={{ color: 'var(--muted)', fontSize: '12px' }}>
+                    {item.type} • {item.channel}
+                  </small>
+                </div>
+              </div>
               <ContentStatus status={item.status} />
-              <small className="studio-recent-date" style={{ fontSize: '13px' }}>{recentDate(item.createdAt)}</small>
             </button>
           ))}
           {recent.length === 0 && (
