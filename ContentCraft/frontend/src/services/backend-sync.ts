@@ -1,5 +1,5 @@
 import { apiRequest } from './api'
-import type { Audience, Brand, Content, Product } from '../types'
+import type { Audience, Brand, Content, Product, User } from '../types'
 
 // Backend Database Data Types
 interface BackendBrand {
@@ -54,13 +54,31 @@ interface BackendContent {
   created_at?: string
 }
 
+interface BackendUser {
+  id: number
+  email: string
+  full_name: string
+  role?: string
+  status?: string
+  created_at?: string
+}
+
+export interface BackendAnalyticsSummary {
+  total_events: number
+  events_by_type: Record<string, number>
+}
+
 // Color palette for brands if none provided
 const BRAND_COLORS = [
   '#0d9488', '#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a'
 ]
 
+function isNumericId(id: string): boolean {
+  return /^\d+$/.test(id)
+}
+
 export const backendSync = {
-  // Fetch Brands from Database
+  // ===================== BRANDS =====================
   async fetchBrands(): Promise<Brand[]> {
     try {
       const list = await apiRequest<BackendBrand[]>('/brands')
@@ -82,7 +100,6 @@ export const backendSync = {
     }
   },
 
-  // Save Brand to Database
   async saveBrand(brand: Brand): Promise<Brand | null> {
     try {
       const payload = {
@@ -93,13 +110,19 @@ export const backendSync = {
         brand_voice: brand.voice,
         marketing_preferences: brand.audience,
       }
-      const saved = await apiRequest<BackendBrand>('/brands', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      return {
-        ...brand,
-        id: String(saved.id),
+
+      if (isNumericId(brand.id)) {
+        const updated = await apiRequest<BackendBrand>(`/brands/${brand.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+        return { ...brand, id: String(updated.id) }
+      } else {
+        const saved = await apiRequest<BackendBrand>('/brands', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+        return { ...brand, id: String(saved.id) }
       }
     } catch (err) {
       console.warn('Could not save brand to backend:', err)
@@ -107,7 +130,18 @@ export const backendSync = {
     }
   },
 
-  // Fetch Products from Database
+  async deleteBrand(id: string): Promise<boolean> {
+    if (!isNumericId(id)) return true
+    try {
+      await apiRequest(`/brands/${id}`, { method: 'DELETE' })
+      return true
+    } catch (err) {
+      console.warn(`Could not delete brand ${id} on backend:`, err)
+      return false
+    }
+  },
+
+  // ===================== PRODUCTS =====================
   async fetchProducts(): Promise<Product[]> {
     try {
       const list = await apiRequest<BackendProduct[]>('/products')
@@ -129,7 +163,6 @@ export const backendSync = {
     }
   },
 
-  // Save Product to Database
   async saveProduct(product: Product): Promise<Product | null> {
     try {
       const numericBrandId = parseInt(product.brandId, 10)
@@ -142,13 +175,19 @@ export const backendSync = {
         usp: product.features,
         status: product.status === 'Active',
       }
-      const saved = await apiRequest<BackendProduct>('/products', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      return {
-        ...product,
-        id: String(saved.id),
+
+      if (isNumericId(product.id)) {
+        const updated = await apiRequest<BackendProduct>(`/products/${product.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+        return { ...product, id: String(updated.id) }
+      } else {
+        const saved = await apiRequest<BackendProduct>('/products', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+        return { ...product, id: String(saved.id) }
       }
     } catch (err) {
       console.warn('Could not save product to backend:', err)
@@ -156,7 +195,18 @@ export const backendSync = {
     }
   },
 
-  // Fetch Audiences from Database
+  async deleteProduct(id: string): Promise<boolean> {
+    if (!isNumericId(id)) return true
+    try {
+      await apiRequest(`/products/${id}`, { method: 'DELETE' })
+      return true
+    } catch (err) {
+      console.warn(`Could not delete product ${id} on backend:`, err)
+      return false
+    }
+  },
+
+  // ===================== AUDIENCES =====================
   async fetchAudiences(): Promise<Audience[]> {
     try {
       const list = await apiRequest<BackendAudience[]>('/audiences')
@@ -183,7 +233,6 @@ export const backendSync = {
     }
   },
 
-  // Save Audience to Database
   async saveAudience(audience: Audience): Promise<Audience | null> {
     try {
       const payload = {
@@ -195,13 +244,19 @@ export const backendSync = {
         interests: audience.interests,
         notes: audience.tone,
       }
-      const saved = await apiRequest<BackendAudience>('/audiences', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      return {
-        ...audience,
-        id: String(saved.id),
+
+      if (isNumericId(audience.id)) {
+        const updated = await apiRequest<BackendAudience>(`/audiences/${audience.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+        return { ...audience, id: String(updated.id) }
+      } else {
+        const saved = await apiRequest<BackendAudience>('/audiences', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+        return { ...audience, id: String(saved.id) }
       }
     } catch (err) {
       console.warn('Could not save audience to backend:', err)
@@ -209,7 +264,18 @@ export const backendSync = {
     }
   },
 
-  // Fetch Contents from Database
+  async deleteAudience(id: string): Promise<boolean> {
+    if (!isNumericId(id)) return true
+    try {
+      await apiRequest(`/audiences/${id}`, { method: 'DELETE' })
+      return true
+    } catch (err) {
+      console.warn(`Could not delete audience ${id} on backend:`, err)
+      return false
+    }
+  },
+
+  // ===================== CONTENTS =====================
   async fetchContents(): Promise<Content[]> {
     try {
       const list = await apiRequest<BackendContent[]>('/contents')
@@ -240,7 +306,6 @@ export const backendSync = {
     }
   },
 
-  // Save Content to Database
   async saveContent(content: Content): Promise<Content | null> {
     try {
       const numericBrandId = parseInt(content.brandId, 10)
@@ -256,16 +321,155 @@ export const backendSync = {
         target_customer_id: isNaN(numericAudienceId) ? null : numericAudienceId,
         content_type: content.type || 'Social post',
       }
-      const saved = await apiRequest<BackendContent>('/contents', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      })
-      return {
-        ...content,
-        id: String(saved.id),
+
+      if (isNumericId(content.id)) {
+        const updated = await apiRequest<BackendContent>(`/contents/${content.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+        return { ...content, id: String(updated.id) }
+      } else {
+        const saved = await apiRequest<BackendContent>('/contents', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        })
+        return { ...content, id: String(saved.id) }
       }
     } catch (err) {
       console.warn('Could not save content to backend:', err)
+      return null
+    }
+  },
+
+  async deleteContent(id: string): Promise<boolean> {
+    if (!isNumericId(id)) return true
+    try {
+      await apiRequest(`/contents/${id}`, { method: 'DELETE' })
+      return true
+    } catch (err) {
+      console.warn(`Could not delete content ${id} on backend:`, err)
+      return false
+    }
+  },
+
+  async updateContentStatus(id: string, status: string): Promise<Content | null> {
+    if (!isNumericId(id)) return null
+    try {
+      const updated = await apiRequest<BackendContent>(`/contents/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      })
+      return {
+        id: String(updated.id),
+        title: updated.title,
+        body: updated.body,
+        type: updated.content_type || 'Social post',
+        channel: updated.platform || 'Facebook',
+        brandId: updated.brand_id ? String(updated.brand_id) : '',
+        productId: updated.product_id ? String(updated.product_id) : '',
+        audienceId: updated.target_customer_id ? String(updated.target_customer_id) : '',
+        status: updated.status as 'Draft' | 'In review' | 'Approved',
+        createdAt: updated.created_at
+          ? new Date(updated.created_at).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        kind: 'text',
+      }
+    } catch (err) {
+      console.warn(`Could not update content status for ${id}:`, err)
+      return null
+    }
+  },
+
+  async approveContent(id: string): Promise<Content | null> {
+    if (!isNumericId(id)) return null
+    try {
+      const updated = await apiRequest<BackendContent>(`/contents/${id}/approve`, {
+        method: 'POST',
+      })
+      return {
+        id: String(updated.id),
+        title: updated.title,
+        body: updated.body,
+        type: updated.content_type || 'Social post',
+        channel: updated.platform || 'Facebook',
+        brandId: updated.brand_id ? String(updated.brand_id) : '',
+        productId: updated.product_id ? String(updated.product_id) : '',
+        audienceId: updated.target_customer_id ? String(updated.target_customer_id) : '',
+        status: 'Approved',
+        createdAt: updated.created_at
+          ? new Date(updated.created_at).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        kind: 'text',
+      }
+    } catch (err) {
+      console.warn(`Could not approve content ${id}:`, err)
+      return null
+    }
+  },
+
+  // ===================== USERS =====================
+  async fetchUsers(): Promise<User[]> {
+    try {
+      const list = await apiRequest<BackendUser[]>('/users')
+      if (!Array.isArray(list)) return []
+      return list.map((u) => ({
+        id: String(u.id),
+        name: u.full_name,
+        email: u.email,
+        role: (u.role === 'Admin' ? 'Admin' : u.role === 'Reviewer' ? 'Reviewer' : 'Editor') as User['role'],
+        status: (u.status === 'Suspended' ? 'Suspended' : u.status === 'Invited' ? 'Invited' : 'Active') as User['status'],
+      }))
+    } catch (err) {
+      console.warn('Could not fetch users from backend:', err)
+      return []
+    }
+  },
+
+  async saveUser(user: User): Promise<User | null> {
+    try {
+      const payload = {
+        email: user.email,
+        full_name: user.name,
+        role: user.role,
+        status: user.status,
+      }
+
+      if (isNumericId(user.id)) {
+        const updated = await apiRequest<BackendUser>(`/users/${user.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+        return { ...user, id: String(updated.id) }
+      } else {
+        const saved = await apiRequest<BackendUser>('/users', {
+          method: 'POST',
+          body: JSON.stringify({ ...payload, password: 'demo1234' }),
+        })
+        return { ...user, id: String(saved.id) }
+      }
+    } catch (err) {
+      console.warn('Could not save user to backend:', err)
+      return null
+    }
+  },
+
+  async deleteUser(id: string): Promise<boolean> {
+    if (!isNumericId(id)) return true
+    try {
+      await apiRequest(`/users/${id}`, { method: 'DELETE' })
+      return true
+    } catch (err) {
+      console.warn(`Could not delete user ${id} on backend:`, err)
+      return false
+    }
+  },
+
+  // ===================== ANALYTICS =====================
+  async fetchAnalyticsSummary(): Promise<BackendAnalyticsSummary | null> {
+    try {
+      return await apiRequest<BackendAnalyticsSummary>('/analytics/summary')
+    } catch (err) {
+      console.warn('Could not fetch analytics summary from backend:', err)
       return null
     }
   },

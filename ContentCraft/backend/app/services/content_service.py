@@ -26,3 +26,17 @@ class ContentService:
         if item is None:
             raise not_found("Content")
         return item
+
+    def update(self, item_id: int, data):
+        if hasattr(data, "model_dump"):
+            data = data.model_dump(exclude_unset=True)
+        item = self.repo.update(item_id, data)
+        if item is None:
+            raise not_found("Content")
+        return item
+
+    def delete(self, item_id: int):
+        success = self.repo.delete(item_id)
+        if not success:
+            raise not_found("Content")
+        return {"success": True, "id": item_id}

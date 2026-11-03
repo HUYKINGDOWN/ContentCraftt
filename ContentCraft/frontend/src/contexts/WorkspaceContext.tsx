@@ -6,15 +6,15 @@ import { backendSync } from '../services/backend-sync'
 
 interface WorkspaceContextValue extends WorkspaceData {
   saveProduct: (item: Product) => Promise<void>
-  deleteProduct: (id: string) => void
+  deleteProduct: (id: string) => Promise<void>
   saveBrand: (item: Brand) => Promise<void>
-  deleteBrand: (id: string) => void
+  deleteBrand: (id: string) => Promise<void>
   saveAudience: (item: Audience) => Promise<void>
-  deleteAudience: (id: string) => void
+  deleteAudience: (id: string) => Promise<void>
   saveContent: (item: Content) => Promise<void>
-  deleteContent: (id: string) => void
-  saveUser: (item: User) => void
-  deleteUser: (id: string) => void
+  deleteContent: (id: string) => Promise<void>
+  saveUser: (item: User) => Promise<void>
+  deleteUser: (id: string) => Promise<void>
   refreshFromBackend: () => Promise<void>
 }
 
@@ -30,21 +30,20 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   })
 
-  // Đồng bộ ban đầu từ FastAPI Backend Database
+  // Đồng bộ từ FastAPI Backend Database
   const refreshFromBackend = useCallback(async () => {
     try {
-      const [brands, products, audiences, contents] = await Promise.all([
+      const [brands, products, audiences, contents, users] = await Promise.all([
         backendSync.fetchBrands(),
         backendSync.fetchProducts(),
         backendSync.fetchAudiences(),
         backendSync.fetchContents(),
+        backendSync.fetchUsers(),
       ])
 
       setData((prev) => {
-        // Hợp nhất dữ liệu backend database (ưu tiên backend items)
         const mergeList = <T extends { id: string }>(backendList: T[], localList: T[]) => {
           if (!backendList.length) return localList
-          // Map backend items đè hoặc bổ sung
           const backendIds = new Set(backendList.map((i) => i.id))
           const remainingLocal = localList.filter((i) => !backendIds.has(i.id))
           return [...backendList, ...remainingLocal]
@@ -56,6 +55,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           products: products.length ? mergeList(products, prev.products) : prev.products,
           audiences: audiences.length ? mergeList(audiences, prev.audiences) : prev.audiences,
           contents: contents.length ? mergeList(contents, prev.contents) : prev.contents,
+          users: users.length ? mergeList(users, prev.users) : prev.users,
         }
       })
     } catch (err) {
@@ -79,6 +79,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }, [data, notify])
 
+  // Product
   const saveProduct = async (item: Product) => {
     const saved = await backendSync.saveProduct(item)
     const toSave = saved || item
@@ -88,13 +89,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
+    await backendSync.deleteProduct(id)
     setData((prev) => ({
       ...prev,
       products: prev.products.filter((item) => item.id !== id),
     }))
   }
 
+  // Brand
   const saveBrand = async (item: Brand) => {
     const saved = await backendSync.saveBrand(item)
     const toSave = saved || item
@@ -104,13 +107,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const deleteBrand = (id: string) => {
+  const deleteBrand = async (id: string) => {
+    await backendSync.deleteBrand(id)
     setData((prev) => ({
       ...prev,
       brands: prev.brands.filter((item) => item.id !== id),
     }))
   }
 
+  // Audience
   const saveAudience = async (item: Audience) => {
     const saved = await backendSync.saveAudience(item)
     const toSave = saved || item
@@ -120,13 +125,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const deleteAudience = (id: string) => {
+  const deleteAudience = async (id: string) => {
+    await backendSync.deleteAudience(id)
     setData((prev) => ({
       ...prev,
       audiences: prev.audiences.filter((item) => item.id !== id),
     }))
   }
 
+  // Content
   const saveContent = async (item: Content) => {
     const saved = await backendSync.saveContent(item)
     const toSave = saved || item
@@ -136,21 +143,26 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const deleteContent = (id: string) => {
+  const deleteContent = async (id: string) => {
+    await backendSync.deleteContent(id)
     setData((prev) => ({
       ...prev,
       contents: prev.contents.filter((item) => item.id !== id),
     }))
   }
 
-  const saveUser = (item: User) => {
+  // User
+  const saveUser = async (item: User) => {
+    const saved = await backendSync.saveUser(item)
+    const toSave = saved || item
     setData((prev) => ({
       ...prev,
-      users: upsert(prev.users, item),
+      users: upsert(prev.users, toSave),
     }))
   }
 
-  const deleteUser = (id: string) => {
+  const deleteUser = async (id: string) => {
+    await backendSync.deleteUser(id)
     setData((prev) => ({
       ...prev,
       users: prev.users.filter((item) => item.id !== id),
@@ -178,6 +190,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     </WorkspaceContext.Provider>
   )
 }
+
 export function useWorkspace() {
   const context = useContext(WorkspaceContext)
   if (!context) throw new Error('WorkspaceProvider is missing')

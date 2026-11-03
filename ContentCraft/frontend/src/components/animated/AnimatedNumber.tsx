@@ -23,3 +23,4 @@ export function AnimatedNumber({
 
   return <motion.span className={className}>{displayVal}</motion.span>
 }
+

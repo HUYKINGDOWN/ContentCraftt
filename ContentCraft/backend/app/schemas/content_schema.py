@@ -15,6 +15,19 @@ class ContentCreate(BaseModel):
     language_preference: str = "VI"
 
 
+class ContentUpdate(BaseModel):
+    title: str | None = None
+    body: str | None = None
+    status: str | None = None
+    platform: str | None = None
+    brand_id: int | None = None
+    product_id: int | None = None
+    target_customer_id: int | None = None
+    rule_id: int | None = None
+    content_type: str | None = None
+    language_preference: str | None = None
+
+
 class ContentStatusUpdate(BaseModel):
     status: str
 

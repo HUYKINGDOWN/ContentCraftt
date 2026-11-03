@@ -12,10 +12,31 @@ class AudienceRepository:
         return self.db.get(Audience, item_id)
 
     def create(self, data: dict):
-        data = data.copy()  # Tạo bản sao của dữ liệu để tránh thay đổi dữ liệu gốc
-        data.pop("platform", None)  # Loại bỏ khóa chính nếu có trong dữ liệu
+        data = data.copy()
+        data.pop("platform", None)
         item = Audience(**data)
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)
         return item
+
+    def update(self, item_id: int, data: dict):
+        item = self.get(item_id)
+        if item is None:
+            return None
+        data = data.copy()
+        data.pop("platform", None)
+        for key, value in data.items():
+            if value is not None and hasattr(item, key):
+                setattr(item, key, value)
+        self.db.commit()
+        self.db.refresh(item)
+        return item
+
+    def delete(self, item_id: int):
+        item = self.get(item_id)
+        if item is None:
+            return False
+        self.db.delete(item)
+        self.db.commit()
+        return True

@@ -15,6 +15,19 @@ class AudienceCreate(BaseModel):
     notes: str | None = None
 
 
+class AudienceUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    platform: str | None = None
+    brand_id: int | None = None
+    age_min: int | None = None
+    age_max: int | None = None
+    gender: str | None = None
+    interests: str | None = None
+    behaviors: str | None = None
+    notes: str | None = None
+
+
 class AudienceRead(BaseModel):
     id: int
     name: str

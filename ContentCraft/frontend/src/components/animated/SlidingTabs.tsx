@@ -78,3 +78,4 @@ export function SlidingTabs<T extends string = string>({
     </div>
   )
 }
+

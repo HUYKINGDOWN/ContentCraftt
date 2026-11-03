@@ -12,6 +12,16 @@ class ProductCreate(BaseModel):
     status: bool = True
 
 
+class ProductUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    brand_id: int | None = None
+    category_name: str | None = None
+    usp: str | None = None
+    key_features: str | None = None
+    status: bool | None = None
+
+
 class ProductRead(BaseModel):
     id: int
     name: str

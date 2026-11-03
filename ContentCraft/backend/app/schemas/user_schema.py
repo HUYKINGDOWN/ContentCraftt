@@ -9,6 +9,13 @@ class UserCreate(BaseModel):
     role: str = "BrandOwner"
 
 
+class UserUpdate(BaseModel):
+    email: str | None = None
+    full_name: str | None = None
+    role: str | None = None
+    status: str | None = None
+
+
 class UserRead(BaseModel):
     id: int
     email: str

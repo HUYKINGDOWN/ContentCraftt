@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.schemas.user_schema import UserRead, UserCreate
+from app.schemas.user_schema import UserRead, UserCreate, UserUpdate
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -20,3 +20,13 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db)):
 @router.get("/{item_id}", response_model=UserRead)
 def get_user(item_id: int, db: Session = Depends(get_db)):
     return UserService(db).get(item_id)
+
+
+@router.put("/{item_id}", response_model=UserRead)
+def update_user(item_id: int, payload: UserUpdate, db: Session = Depends(get_db)):
+    return UserService(db).update(item_id, payload)
+
+
+@router.delete("/{item_id}")
+def delete_user(item_id: int, db: Session = Depends(get_db)):
+    return UserService(db).delete(item_id)

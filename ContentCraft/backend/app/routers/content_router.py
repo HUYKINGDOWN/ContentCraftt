@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.schemas.content_schema import ContentCreate, ContentRead, ContentStatusUpdate
+from app.schemas.content_schema import ContentCreate, ContentRead, ContentStatusUpdate, ContentUpdate
 from app.services.content_service import ContentService
 
 router = APIRouter(prefix="/contents", tags=["contents"])
@@ -20,6 +20,16 @@ def create_item(payload: ContentCreate, db: Session = Depends(get_db)):
 @router.get("/{item_id}", response_model=ContentRead)
 def get_item(item_id: int, db: Session = Depends(get_db)):
     return ContentService(db).get(item_id)
+
+
+@router.put("/{item_id}", response_model=ContentRead)
+def update_item(item_id: int, payload: ContentUpdate, db: Session = Depends(get_db)):
+    return ContentService(db).update(item_id, payload)
+
+
+@router.delete("/{item_id}")
+def delete_item(item_id: int, db: Session = Depends(get_db)):
+    return ContentService(db).delete(item_id)
 
 
 @router.patch("/{item_id}/status", response_model=ContentRead)

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.user_model import User
+from app.core.security import hash_password
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -11,9 +12,41 @@ class UserRepository:
     def get(self, item_id: int):
         return self.db.get(User, item_id)
 
+    def get_by_email(self, email: str):
+        return self.db.query(User).filter(User.email == email).first()
+
     def create(self, data: dict):
+        data = data.copy()
+        raw_pw = data.pop("password", None)
+        if raw_pw and "password_hash" not in data:
+            data["password_hash"] = hash_password(raw_pw)
+        elif "password_hash" not in data:
+            data["password_hash"] = hash_password("demo1234")
         item = User(**data)
         self.db.add(item)
         self.db.commit()
         self.db.refresh(item)
         return item
+
+    def update(self, item_id: int, data: dict):
+        item = self.get(item_id)
+        if item is None:
+            return None
+        data = data.copy()
+        raw_pw = data.pop("password", None)
+        if raw_pw:
+            data["password_hash"] = hash_password(raw_pw)
+        for key, value in data.items():
+            if value is not None and hasattr(item, key):
+                setattr(item, key, value)
+        self.db.commit()
+        self.db.refresh(item)
+        return item
+
+    def delete(self, item_id: int):
+        item = self.get(item_id)
+        if item is None:
+            return False
+        self.db.delete(item)
+        self.db.commit()
+        return True
